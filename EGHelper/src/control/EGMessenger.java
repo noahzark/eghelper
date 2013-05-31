@@ -7,12 +7,11 @@ import model.Page;
 
 import dao.Core;
 
-
-
 import view.InfoFrame;
 
 public class EGMessenger {
-	public String version = "3.0";
+	public static String title = "制服少女掀裙助手";
+	public static String version = "3.1";
 	
 	public TreeMap<String, String> infoMap = null;
 	

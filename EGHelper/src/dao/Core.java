@@ -35,6 +35,8 @@ import org.apache.http.util.EntityUtils;
 import control.EGMessenger;
 
 public class Core implements Runnable {
+	private final int randomLeast = 10;
+	private final int randomOther = 10;
 	
 	private DefaultHttpClient hc;
 	private App app;
@@ -63,6 +65,8 @@ public class Core implements Runnable {
 	private String fileBonusResult = "BonusResult.json";
 	
 	private boolean showAnalyze = true;
+	private boolean isUpgrade = false;
+	
 	private boolean useBPMode = false;
 	public boolean isCanDoBattle() throws IOException {
 		String s = Core.findString("title=\"Battle\">", fileBattleList);
@@ -99,12 +103,15 @@ public class Core implements Runnable {
 	public void setWaitTime(int wait){
 		this.waitTime = wait;
 	}
-	private int PVEN = 0, PVEL = 0;
+	private int PVEN = 0, PVEL = 0, PVEU = 0;
 	public void setPVEN(int pVE) {
 		PVEN = pVE;
 	}
 	public void setPVEL(int pVE) {
 		PVEL = pVE;
+	}
+	public void setPVEU(int pVE) {
+		PVEU = pVE;
 	}
 	public Core(DefaultHttpClient dhc,App app,String uID, EGMessenger carrier) {
 		this.host = carrier.pages.HOST;
@@ -121,7 +128,7 @@ public class Core implements Runnable {
 		req.setHeader("Accept-Language", "zh-cn");
 		req.setHeader("Accept-Encoding", "gzip, deflate");
 		req.setHeader("App-Id-2", this.app.id2);
-		req.setHeader("App-Version", "1.3");
+		req.setHeader("App-Version", this.app.version);
 		req.setHeader("App-Id-3", this.app.id3);
 		req.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
 		req.setHeader("referrer", referrer);
@@ -210,6 +217,8 @@ public class Core implements Runnable {
 	public static String sortString(String s,String front,char back){
 		StringBuffer sb = new StringBuffer();
 		int i;
+		if (s == null)
+			return null;
 		for (i=0;i<s.length();i++){
 			sb.append(s.charAt(i));
 			if (sb.toString().contains(front))
@@ -239,6 +248,10 @@ public class Core implements Runnable {
 			return true;
 		}
 		this.loadPage(carrier.pages.MISSION+"/show/"+mid, resultFile);
+		if (Core.findString("カード枚数", resultFile)!=null){
+			carrier.println("卡片数达到上限，无法继续作战，请先到新闻部整理卡牌。");
+			return true;
+		}
 		String s;
 		s = findString("id=\"executeBtn\"",resultFile);
 		s = sortString(s, host, '\"');
@@ -252,6 +265,10 @@ public class Core implements Runnable {
 	}
 
 	private boolean playMission(String missionUrl) throws ClientProtocolException, IOException {
+		if (missionUrl==null){
+			carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
+			return false;
+		}
 		loadPage(missionUrl,fileMissionList);
 		String s = Core.findString("こちら", this.fileMissionList);
 		if (s!=null)
@@ -269,15 +286,21 @@ public class Core implements Runnable {
 		
 		carrier.showMissionList();
 		if (missionAn.isResult){
-			carrier.println("当前PVE任务，继续探索。");
+			carrier.println("当前无PVE任务，继续探索。");
 			return true;
+		}
+		
+		if (this.isUpgrade&&this.bp>0){
+			carrier.println("即将升级，自动攻击。");
+			bp = 5;
 		}
 		
 		for (int i=1;i<=missions.size();i++){
 			Mission m = missions.get(i);
 			if (m.getStatus().contains("未参加")){
 				if (m.getTitle().contains("緊急")){
-					this.attendMission(m.getMid(), fileMissionPage,"发现好友 "+m.getUser()+" 紧急，自动战斗。");
+					if (bp>=PVEU)
+						this.attendMission(m.getMid(), fileMissionPage,"发现好友 "+m.getUser()+" 紧急，自动战斗。");
 				} else if (m.getTitle().contains("特大")){
 					if (bp>=PVEL)
 						this.attendMission(m.getMid(), fileMissionPage,"发现好友 "+m.getUser()+" 特大，自动战斗。");
@@ -315,14 +338,11 @@ public class Core implements Runnable {
 	
 	private boolean playQuest(String questUrl) throws ClientProtocolException, IOException {
 		analyzeStatus(true,questUrl);
-		if (st+exp>max_exp){
-			this.attendQuest("quest_execute_form", fileQuestPage, "即将升级，继续探索。");
-			bp=5;
-		}
-		
 		int t = (max_st-(st_up+st_down))/5;
 		if (st>(max_st-bp*t-st_up)){
 			this.attendQuest("quest_execute_form", fileQuestPage, "ST过多，继续探索。");
+		} else if (this.isUpgrade) {
+			this.attendQuest("quest_execute_form", fileQuestPage, "即将升级，继续探索。");
 		}
 		return true;
 	}
@@ -422,6 +442,13 @@ public class Core implements Runnable {
 		s = s.replace("</span>", "");
 		s = s.replace("<span id=\"max_bp\">", "");
 		max_bp = Integer.parseInt(s);
+		
+		if (st+exp>max_exp){
+			this.attendQuest("quest_execute_form", fileQuestPage, "即将升级，继续探索。");
+			this.isUpgrade = true;
+		} else {
+			this.isUpgrade = false;
+		}
 	}
 
 	private boolean analyzeTime(String url1,String url2,String UID) throws ClientProtocolException, IOException {
@@ -469,8 +496,20 @@ public class Core implements Runnable {
 		return true;
 	}
 	
+	private void analyzeLinks(String fileMainPage) throws IOException {
+		String s = Core.findString(">quest<", fileMainPage);
+		s = Core.sortString(s, this.host, '\"');
+		carrier.pages.QUEST = s;
+		s = Core.findString(">ミッション<", fileMainPage);
+		s = Core.sortString(s, this.host, '\"');
+		carrier.pages.MISSION = s;
+		s = Core.findString(">校内定期戦<", fileMainPage);
+		s = Core.sortString(s, this.host, '\"');
+		carrier.pages.BATTLE = s;
+	}
+	
 	private long getRandomTime(int i, int j){
-		int time = 10;
+		int time = this.randomLeast;
 		time += radomer.nextInt(i)+radomer.nextInt(j);
 		return time;
 	}
@@ -516,7 +555,14 @@ public class Core implements Runnable {
 			boolean isBattleActivity = true;
 			boolean isMissionActivity = true;
 			
-			loadPage(carrier.pages.MYPAGE, fileMainPage);
+			carrier.println("开始解析链接。。。。。。");
+			exitflag &= analyzeTime(
+					carrier.pages.MYPAGE,
+					carrier.pages.USER_DETAIL,
+					this.UID
+			);
+			this.analyzeLinks(this.fileMainPage);
+			carrier.println("解析完毕");
 			carrier.println("Start: "+new Date());
 						
 			while(exitflag){
@@ -544,16 +590,13 @@ public class Core implements Runnable {
 					}
 					
 					if (isMissionActivity){
-						isMissionActivity = exitflag & this.playMission(carrier.pages.MISSION);
+						isMissionActivity = this.playMission(carrier.pages.MISSION);
 					}
 					
-					if (freebp>0)
+					if (freebp>0||this.useBPMode)
 						playBattle(carrier.pages.BATTLE, carrier.pages.BATTLE+carrier.pages.SHOW_USER);
 					
-					if (isMissionActivity)
-						exitflag &= this.playQuest(carrier.pages.EVENT_QUEST);
-					else
-						exitflag &= this.playQuest(carrier.pages.QUEST);
+					exitflag &= this.playQuest(carrier.pages.QUEST);
 					
 					analyzeStatus(false,carrier.pages.QUEST);
 					
@@ -569,6 +612,8 @@ public class Core implements Runnable {
 						if (!carrier.isModeGUI())
 							carrier.println("ST: "+st+" / "+max_st+"\tBP: "+bp+" / "+max_bp+"\tEP: "+exp+" / "+max_exp);
 						int i = max_exp-exp-st;
+						if (i<0)
+							i=0;
 						String t3;
 						t3 = (i/60<10)?"0":"";
 						t3 = t3 + i/60 + ":";
@@ -588,7 +633,7 @@ public class Core implements Runnable {
 				}
 				
 				{
-					long t = getRandomTime(10,this.waitTime);
+					long t = getRandomTime(this.randomOther, this.waitTime);
 					carrier.println("等待: "+t+"s");
 					this.clearFiles();
 					carrier.setFight(true);
@@ -596,7 +641,7 @@ public class Core implements Runnable {
 						Thread.sleep((long)t*1000L);
 					} catch(InterruptedException e){
 					} finally {
-					carrier.println("\n已唤醒："+new Date());
+						carrier.println("\n已唤醒："+new Date());
 					}
 					carrier.setFight(false);
 				}

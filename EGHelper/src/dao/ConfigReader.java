@@ -34,7 +34,8 @@ public class ConfigReader {
 				"NORMALBATTLE",
 				"PVP_PT_MAX",
 				"PVE_NORMAL",
-				"PVE_LARGE"
+				"PVE_LARGE",
+				"PVE_URGENT"
 		};
 		if (infoMap.size()!=s.length)
 			return false;

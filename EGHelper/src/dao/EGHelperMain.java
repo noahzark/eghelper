@@ -11,11 +11,13 @@ public class EGHelperMain {
 				another.run();
 			}
 				break;
-			case 1:
+			case 1:{
 				if (args[0].equals("console")){
 					EGHelperConsoleMain another = new EGHelperConsoleMain(false);
-					if (another.carrier.infoMap!=null)
+					if (another.carrier.infoMap!=null){
+						EGHelperConsoleMain.showTactics(another.carrier);
 						another.start();
+					}
 				} else if (args[0].equals("true")){
 					EGHelperGUIMain another = new EGHelperGUIMain(true);
 					another.run();
@@ -23,6 +25,7 @@ public class EGHelperMain {
 					EGHelperGUIMain another = new EGHelperGUIMain(false);
 					another.run();
 				}
+			}
 				break;
 			default:{
 				EGHelperConsoleMain another = new EGHelperConsoleMain(true);

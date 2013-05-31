@@ -2,10 +2,6 @@
 DRIVER = appdriver.jp
 HOST = kmsk.native.hekk.org
 MYPAGE = /mypage
-QUEST = /quests/show
-BATTLE = /battle
-MISSION = /missions
-EVENT_QUEST = /event_training/show
 EVENT_BATTLE = /battle_in_event
 SHOW_USER = /show?user_id=
 USER_DETAIL = /users/show/

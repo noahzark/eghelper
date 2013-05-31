@@ -20,7 +20,7 @@ public class EGHelperGUIMain {
 		
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				InfoFrame inst = new InfoFrame("EG助手 V"+carrier.version,carrier);
+				InfoFrame inst = new InfoFrame(EGMessenger.title+" V"+EGMessenger.version,carrier);
 				inst.setLocationRelativeTo(null);
 				inst.setVisible(true);
 			}
