@@ -22,15 +22,11 @@ public class PageReader {
 				"DRIVER",
 				"HOST",
 				"MYPAGE",
-				"QUEST",
-				"BATTLE",
-				"MISSION",
-				"EVENT_QUEST",
 				"EVENT_BATTLE",
 				"SHOW_USER",
 				"USER_DETAIL"
 		};
-		if (infoMap.size()!=s.length)
+		if (infoMap.size()<s.length)
 			return false;
 		String t;
 		for (int i=0;i<s.length;i++){

@@ -45,7 +45,7 @@ public class EGConnection {
 	private EGMessenger carrier = null;
 	
 	private String userAgent = "EnsembleGirls/1.3 CFNetwork/609.1.4 Darwin/13.0.0";
-	private String userAgent2 =  "Mozilla/5.0 (iPhone; CPU iPhone OS 6_1 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Mobile/10B142 EnsembleGirls/1.3";
+	private String userAgent2 =  "Mozilla/5.0 (iPhone; CPU iPhone OS 6_1 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Mobile/10B142 EnsembleGirls/1.5";
 
 	private String server1;
 	private String server2;
@@ -61,7 +61,7 @@ public class EGConnection {
 	private void FirstCheck(String addr) throws ParseException, IOException {
 		hc.getParams().setParameter(CoreProtocolPNames.USER_AGENT, this.userAgent);
 		HttpHost target = new HttpHost(this.server1, 80, "http");
-		HttpGet req = new HttpGet(addr+"?app="+this.appinfo.app+"&sdk="+this.appinfo.sdk+"&digest="+this.appinfo.digest);
+		HttpGet req = new HttpGet(addr+"?app="+this.app.version+"&sdk="+this.appinfo.sdk+"&digest="+this.appinfo.digest);
 		carrier.println("Executing request to " + target);
         HttpResponse rsp = hc.execute(target, req);
         HttpEntity entity = rsp.getEntity();

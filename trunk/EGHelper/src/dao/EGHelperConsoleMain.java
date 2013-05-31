@@ -33,6 +33,7 @@ public class EGHelperConsoleMain extends Thread{
 
 	public EGHelperConsoleMain(boolean b){
 		carrier = new EGMessenger(1000,1);
+		carrier.println(EGMessenger.title+" V"+EGMessenger.version);
 		carrier.setDebugMode(debug);
 		carrier.setQuiteMode(b);
 		if (!EGHelperConsoleMain.loadConfig(carrier))
@@ -45,14 +46,14 @@ public class EGHelperConsoleMain extends Thread{
 	
 	public void startPlay(){
 		AppInfo appinfo = new AppInfo(
-				carrier.infoMap.get("app"),
 				carrier.infoMap.get("sdk"),
 				carrier.infoMap.get("digest")
 		);
 		App app = new App(
 				carrier.infoMap.get("App-Id-1"),
 				carrier.infoMap.get("App-Id-2"),
-				carrier.infoMap.get("App-Id-3")
+				carrier.infoMap.get("App-Id-3"),
+				carrier.infoMap.get("app")
 		);
 		carrier.println("Connecting......");
 		
@@ -83,6 +84,7 @@ public class EGHelperConsoleMain extends Thread{
 			carrier.setMaxLines(Integer.parseInt(carrier.infoMap.get("MAXLINES")));
 			peg.setPVEN(Integer.parseInt(carrier.infoMap.get("PVE_NORMAL")));
 			peg.setPVEL(Integer.parseInt(carrier.infoMap.get("PVE_LARGE")));
+			peg.setPVEU(Integer.parseInt(carrier.infoMap.get("PVE_URGENT")));
 			peg.setWaitTime(Integer.parseInt(carrier.infoMap.get("WAIT")));
 			peg.setSt_up(Integer.parseInt(carrier.infoMap.get("ST_UP")));
 			peg.setSt_down(Integer.parseInt(carrier.infoMap.get("ST_DOWN")));
@@ -122,17 +124,17 @@ public class EGHelperConsoleMain extends Thread{
 		carrier.print(
 				"当前策略：\n"+
 				"1.剩余校园PVP免费BP时继续参战；\n" +
-				"2.剩余ST+EXP大于升级所需EXP时自动探索；\n" +
-				"3.剩余ST在"+carrier.infoMap.get("ST_DOWN")+"与最大ST-" +
+				"2.剩余ST+EXP大于升级所需EXP时自动探索/战斗；\n" +
+				"3.保持ST在"+carrier.infoMap.get("ST_DOWN")+"与最大ST-" +
 				carrier.infoMap.get("ST_UP")+"间浮动；\n"+
 				"4.刷新间隔10+0~10+0~"+carrier.infoMap.get("WAIT")+"s；\n"+
-				"5.当BP大于等于"+carrier.infoMap.get("BP_COMBO")+"时继续参加战斗；\n"+
+				"5.当BP大于等于"+carrier.infoMap.get("BP_COMBO")+"时继续参加PVP活动战斗；\n"+
 				"6.PVP战斗只攻击校园点数低于+"+carrier.infoMap.get("PVP_PT_MAX")+"的敌人；\n"+
-				"6.自动参加好友紧急PVE战斗；\n"+
 				"7.当BP大于等于"+carrier.infoMap.get("PVE_NORMAL")+"时，参加好友普通PVE战斗；\n"+
 				"8.当BP大于等于"+carrier.infoMap.get("PVE_LARGE")+"时，参加好友特大PVE战斗；\n"+
-				"9.当BP大于等于4时，自动参加当前PVE任务列表第一的战斗；\n"+
-				"10."
+				"9.当BP大于等于"+carrier.infoMap.get("PVE_URGENT")+"时，参加好友紧急PVE战斗；\n"+
+				"10.当BP大于等于4时，自动参加当前PVE任务列表第一的战斗；\n"+
+				"11."
 		);
 		if (carrier.infoMap.get("NORMALBATTLE").equals("0"))
 			carrier.println("不使用BP参加校园PVP。");
@@ -142,7 +144,6 @@ public class EGHelperConsoleMain extends Thread{
 	
 	public static void main(String[] args) {
 		EGHelperConsoleMain another = new EGHelperConsoleMain(false);
-		another.carrier.println("EG助手 V"+another.carrier.version);
 		if (another.carrier.infoMap!=null){
 			EGHelperConsoleMain.showTactics(another.carrier);
 			another.start();
