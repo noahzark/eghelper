@@ -35,8 +35,8 @@ import org.apache.http.util.EntityUtils;
 import control.EGMessenger;
 
 public class Core implements Runnable {
-	private final int randomLeast = 5;
-	private final int randomOther = 5;
+	private final int randomLeast = 10;
+	private final int randomOther = 10;
 	
 	private DefaultHttpClient hc;
 	private App app;
@@ -308,18 +308,18 @@ public class Core implements Runnable {
 		
 		for (int i=1;i<=missions.size();i++){
 			Mission m = missions.get(i);
-			if (m.getUid().equals(UID)){
-				if (bp>=2)
-					this.attendMission(m.getMid(), fileMissionPage, "发现自己任务，自动战斗。");
-			} else if (m.getStatus().contains("未参加")){
+			String str = "好友 - ";
+			if (m.getStatus().contains("未参加")||m.getHp()[1].equals("100")){
+				if (!m.getStatus().contains("未参加"))
+					str = "自己 - ";
 				if (m.getTitle().contains("緊急")){
 					if (bp>=PVEU)
-						this.attendMission(m.getMid(), fileMissionPage, "发现好友 "+m.getUser()+" 紧急，自动战斗。");
+						this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 紧急，自动战斗。");
 				} else if (m.getTitle().contains("特大")){
 					if (bp>=PVEL)
-						this.attendMission(m.getMid(), fileMissionPage, "发现好友 "+m.getUser()+" 特大，自动战斗。");
+						this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 特大，自动战斗。");
 				} else if (bp>=PVEN)
-					this.attendMission(m.getMid(), fileMissionPage, "发现好友 "+m.getUser()+" 普通，自动战斗。");
+					this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 普通，自动战斗。");
 			} else if (bp>=4){
 				this.attendMission(m.getMid(), fileMissionPage, "BP快满，自动战斗。");
 			}
