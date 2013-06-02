@@ -61,13 +61,19 @@ public class MissionAnalyzer {
 					Mission mission = new Mission(title,level,user,uid,startTime,null,status,mid);
 					missions.put(i, mission);
 				}
-				
-				
-				
 				i++;
 			}
 		}
 		return missions;
+	}
+	
+	public String[] analyzeDetail(String fileName) throws IOException{
+		String[] s = new String[2];
+		s[0] = Core.findString("残り：", fileName);
+		s[0] = Core.sortString(s[0], "残り：", '.');
+		s[1] = Core.findString("solidGauge", fileName);
+		s[1] = Core.sortString(s[1], "title=\"", '%');
+		return s;
 	}
 
 	private String readLnUntil(BufferedReader br, String string) throws IOException {

@@ -35,8 +35,8 @@ import org.apache.http.util.EntityUtils;
 import control.EGMessenger;
 
 public class Core implements Runnable {
-	private final int randomLeast = 10;
-	private final int randomOther = 10;
+	private final int randomLeast = 5;
+	private final int randomOther = 5;
 	
 	private DefaultHttpClient hc;
 	private App app;
@@ -50,7 +50,7 @@ public class Core implements Runnable {
 	
 	private String fileMainPage = "nowMain.html";
 	private String fileStatusPage = "nowStatus.html";
-	private String fileMissionList = "nowMissions.html";
+	private String filemissionSet = "nowMissions.html";
 	private String fileMissionPage = "MissionNow.html";
 	private String fileQuestPage = "nowQuest.html";
 	private String fileMissionResult = "MissionResult.json";
@@ -113,6 +113,7 @@ public class Core implements Runnable {
 	public void setPVEU(int pVE) {
 		PVEU = pVE;
 	}
+	
 	public Core(DefaultHttpClient dhc,App app,String uID, EGMessenger carrier) {
 		this.host = carrier.pages.HOST;
 		hc = dhc;
@@ -269,26 +270,36 @@ public class Core implements Runnable {
 			carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
 			return false;
 		}
-		loadPage(missionUrl,fileMissionList);
-		String s = Core.findString("こちら", this.fileMissionList);
+		
+		loadPage(missionUrl,filemissionSet);
+		String s = Core.findString("こちら", this.filemissionSet);
 		if (s!=null)
 			getBonus(s);
-		if (Core.findString("ミッションはありません", this.fileMissionList)!=null){
+		if (Core.findString("ミッションはありません", this.filemissionSet)!=null){
 			carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
 			return false;
 		}
-		MissionAnalyzer missionAn = new MissionAnalyzer(host,fileMissionList);
+		
+		MissionAnalyzer missionAn = new MissionAnalyzer(host,filemissionSet);
 		missions = missionAn.analyze();
 		if (missions==null){
 			carrier.println("PVE任务解析失败，退出。");
 			return false;
 		}
 		
-		carrier.showMissionList();
 		if (missionAn.isResult){
 			carrier.println("当前无PVE任务，继续探索。");
+			carrier.showMissionList();
 			return true;
 		}
+		
+		for (int i=1;i<=missions.size();i++){
+			Mission m = missions.get(i);
+			this.loadPage(carrier.pages.MISSION+"/show/"+m.getMid(), fileMissionPage);
+			m.setHp(missionAn.analyzeDetail(fileMissionPage));
+		}
+		
+		carrier.showMissionList();
 		
 		if (this.isUpgrade&&this.bp>0){
 			carrier.println("即将升级，自动攻击。");
@@ -297,17 +308,20 @@ public class Core implements Runnable {
 		
 		for (int i=1;i<=missions.size();i++){
 			Mission m = missions.get(i);
-			if (m.getStatus().contains("未参加")){
+			if (m.getUid().equals(UID)){
+				if (bp>=2)
+					this.attendMission(m.getMid(), fileMissionPage, "发现自己任务，自动战斗。");
+			} else if (m.getStatus().contains("未参加")){
 				if (m.getTitle().contains("緊急")){
 					if (bp>=PVEU)
-						this.attendMission(m.getMid(), fileMissionPage,"发现好友 "+m.getUser()+" 紧急，自动战斗。");
+						this.attendMission(m.getMid(), fileMissionPage, "发现好友 "+m.getUser()+" 紧急，自动战斗。");
 				} else if (m.getTitle().contains("特大")){
 					if (bp>=PVEL)
-						this.attendMission(m.getMid(), fileMissionPage,"发现好友 "+m.getUser()+" 特大，自动战斗。");
+						this.attendMission(m.getMid(), fileMissionPage, "发现好友 "+m.getUser()+" 特大，自动战斗。");
 				} else if (bp>=PVEN)
-					this.attendMission(m.getMid(), fileMissionPage,"发现好友 "+m.getUser()+" 普通，自动战斗。");
+					this.attendMission(m.getMid(), fileMissionPage, "发现好友 "+m.getUser()+" 普通，自动战斗。");
 			} else if (bp>=4){
-				this.attendMission(m.getMid(), fileMissionPage,"BP快满，自动战斗。");
+				this.attendMission(m.getMid(), fileMissionPage, "BP快满，自动战斗。");
 			}
 		}		
 		return true;
