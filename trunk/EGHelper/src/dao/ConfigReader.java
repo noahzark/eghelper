@@ -33,6 +33,7 @@ public class ConfigReader {
 				"WAIT",
 				"NORMALBATTLE",
 				"PVP_PT_MAX",
+				"PVP_DEFENSE_MAX",
 				"PVE_NORMAL",
 				"PVE_LARGE",
 				"PVE_URGENT"

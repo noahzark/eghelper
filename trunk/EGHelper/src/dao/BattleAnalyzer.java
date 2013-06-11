@@ -16,7 +16,7 @@ public class BattleAnalyzer {
 	}
 	
 	public TreeMap<Integer, User> analyze() throws IOException{
-		if (Core.findString("\"result\"", src)!=null)
+		if (Core.findString("人気投票", src)!=null)
 			isNormal = false;
 		else
 			isNormal = true;
@@ -35,12 +35,51 @@ public class BattleAnalyzer {
 		} else {
 			int i=0;
 			StringBuffer s = new StringBuffer();
+			int level = 1;
+			String defense="",winPercent="";
+			boolean special = false;
 			while ((i = br.read())!=-1){
 				s.append((char)i);
-				if (s.toString().contains("accentBtnS")){
-					String s2 = Core.sortString(s.toString(), "user_id=", '\\');
-					users.put(no++, new User(s2));
-					s.setLength(0);
+				switch(level){
+				case 1:
+					{
+						if (s.toString().contains("勝つとイベントpt2倍!")){
+							special = true;
+							s.setLength(0);
+						}
+						if (s.toString().contains("勝率")){
+							String s2 = Core.sortString(s.toString(), "pt:約", ')');
+							defense=s2;
+							s.setLength(0);
+							level++;
+						}
+					}
+					break;
+				case 2:
+					{
+						if (s.toString().contains("を応援中")){
+							String s2 = Core.sortString(s.toString(), "：", '%');
+							winPercent=s2;
+							s.setLength(0);
+							level++;
+						}
+					}
+					break;
+				case 3:
+					{
+						if (s.toString().contains("accentBtnS")){
+							String s2 = Core.sortString(s.toString(), "user_id=", '\"');
+							User u = new User(s2);
+							u.setDefense(defense);
+							u.setWinPercent(winPercent);
+							u.setSpecial(special);
+							users.put(no++, u);
+							s.setLength(0);
+							level = 1;
+							special = false;
+						}
+					}
+					break;
 				}
 			}
 		}

@@ -35,8 +35,8 @@ import org.apache.http.util.EntityUtils;
 import control.EGMessenger;
 
 public class Core implements Runnable {
-	private final int randomLeast = 10;
-	private final int randomOther = 10;
+	private final int randomLeast = 5;
+	private final int randomOther = 5;
 	
 	private DefaultHttpClient hc;
 	private App app;
@@ -78,6 +78,11 @@ public class Core implements Runnable {
 	public void setUseBPMode(boolean useBPMode) {
 		this.useBPMode = useBPMode;
 	}
+	
+	private int fightMode = 0; //0 - 全部 1 - 自己 2 - 好友
+	public void setFightMode(int fightMode) {
+		this.fightMode = fightMode;
+	}
 
 	public int st,max_st,bp,max_bp,exp=0,max_exp=9999;
 	private int freebp = 5;
@@ -113,6 +118,14 @@ public class Core implements Runnable {
 	public void setPVEU(int pVE) {
 		PVEU = pVE;
 	}
+	
+	private long hpmin = 0;
+	private long defenseMax;	
+	public void setDefenseMax(long defenseMax) {
+		this.defenseMax = defenseMax;
+	}
+	
+	private int pvpNoFresh = 0;
 	
 	public Core(DefaultHttpClient dhc,App app,String uID, EGMessenger carrier) {
 		this.host = carrier.pages.HOST;
@@ -158,17 +171,21 @@ public class Core implements Runnable {
 		HttpResponse rsp = hc.execute(target, req);
 		HttpEntity entity = rsp.getEntity();
 
-		if (entity != null) {
-			GZIPInputStream gis = new GZIPInputStream(entity.getContent());
-			int b;
-			FileOutputStream fos = new FileOutputStream(new File(filename));
-			while((b = gis.read())!=-1)
-				fos.write(b);
-			fos.close();
+		try{
+			if (entity != null) {
+				GZIPInputStream gis = new GZIPInputStream(entity.getContent());
+				int b;
+				FileOutputStream fos = new FileOutputStream(new File(filename));
+				while((b = gis.read())!=-1)
+					fos.write(b);
+				fos.close();
+			}
+		} catch(Exception e){
+			
+		} finally{
+			EntityUtils.consume(entity);
 		}
 		
-		EntityUtils.consume(entity);
-
 		referrer2 = referrer;
 		referrer = "http://"+this.host+addr;
 		//页面前进刷新referrer
@@ -309,9 +326,8 @@ public class Core implements Runnable {
 		for (int i=1;i<=missions.size();i++){
 			Mission m = missions.get(i);
 			String str = "好友 - ";
-			if (m.getStatus().contains("未参加")||m.getHp()[1].equals("100")){
-				if (!m.getStatus().contains("未参加"))
-					str = "自己 - ";
+			if (m.getUid().equals(UID)&&(this.fightMode==1||this.fightMode==0)){
+				str = "自己 - ";
 				if (m.getTitle().contains("緊急")){
 					if (bp>=PVEU)
 						this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 紧急，自动战斗。");
@@ -320,6 +336,19 @@ public class Core implements Runnable {
 						this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 特大，自动战斗。");
 				} else if (bp>=PVEN)
 					this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 普通，自动战斗。");
+			} else if (m.getStatus().contains("未参加")&&(this.fightMode==2||this.fightMode==0)){
+				if (m.getHpNow()>=this.hpmin){
+					if (m.getTitle().contains("緊急")){
+						if (bp>=PVEU)
+							this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 紧急，自动战斗。");
+					} else if (m.getTitle().contains("特大")){
+						if (bp>=PVEL)
+							this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 特大，自动战斗。");
+					} else if (bp>=PVEN)
+						this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 普通，自动战斗。");
+				} else {
+					carrier.println("好友"+m.getUser()+"的任务剩余血量"+m.getHpNow()+"低于"+this.hpmin+"，不参战。");
+				}
 			} else if (bp>=4){
 				this.attendMission(m.getMid(), fileMissionPage, "BP快满，自动战斗。");
 			}
@@ -365,16 +394,20 @@ public class Core implements Runnable {
 		return (s!=null);
 	}
 	
-	private boolean attendBattle(String battleUrl,String key) throws ClientProtocolException, IOException {
+	private Boolean attendBattle(String battleUrl,String key) throws ClientProtocolException, IOException {
 		this.loadPage(battleUrl, fileBattlePage);
 		String url;
+		if (Core.findString("カード枚数", fileBattlePage)!=null){
+			carrier.println("卡片数达到上限，无法继续作战，请先到新闻部整理卡牌。");
+			return null;
+		}
 		String s = Core.findString(key, fileBattlePage);
 		url = sortString(s,host,'"');
 		List<NameValuePair> formParams = new ArrayList<NameValuePair>();   
 		formParams.add(new BasicNameValuePair("healItem_2", "0"));   
 		formParams.add(new BasicNameValuePair("healItem_4", "0"));        
 		formParams.add(new BasicNameValuePair("bp", "1"));     
-		HttpEntity entity = new UrlEncodedFormEntity(formParams, "UTF-8");   
+		HttpEntity entity = new UrlEncodedFormEntity(formParams, "UTF-8");
 		postPage(url, this.fileBattleResult, entity);
 		return this.analyzeBattleResult(this.fileBattleResult);
 	}
@@ -401,26 +434,54 @@ public class Core implements Runnable {
 		if (freebp>0)
 			carrier.println("免费BP剩余，继续战斗。");
 		else
-			carrier.println("BP剩余，继续战斗");
+			if (bp>0)
+				carrier.println("BP剩余，继续战斗");
+			else
+				return true;
 		BattleAnalyzer battleAn = new BattleAnalyzer(fileBattleList);
 		users = battleAn.analyze();
+		
 		int no = 0;
-		int ptmin = pt_min;
 		User now;
-		for (int i=1;i<=users.size();i++){
-			now = users.get(i);
-			this.loadPage(carrier.pages.USER_DETAIL+now.getUid(), fileUserPage);
-			now.getUserInfo(fileUserPage);
-			if (now.getPoint()<ptmin){
-				no = i;
-				ptmin = now.getPoint();
+		if (Core.findString("人気投票", fileBattleList)!=null&&(pvpNoFresh<=20)){
+			for (int i=1;i<=users.size();i++){
+				now = users.get(i);
+				this.loadPage(carrier.pages.USER_DETAIL+now.getUid(), fileUserPage);
+				now.getUserInfo(fileUserPage);
+				if (now.isSpecial()){
+					if (now.getDefense()<=this.defenseMax)
+						no = i;
+				}				
+			}
+			this.pvpNoFresh++;
+		} else {
+			if (this.pvpNoFresh>10)
+				carrier.println("PVP对战列表活动解析模式超过20次未成功，自动改为普通解析模式。");
+			int ptmin = pt_min;
+			for (int i=1;i<=users.size();i++){
+				now = users.get(i);
+				this.loadPage(carrier.pages.USER_DETAIL+now.getUid(), fileUserPage);
+				now.getUserInfo(fileUserPage);
+				if (now.getPoint()<ptmin){
+					no = i;
+					ptmin = now.getPoint();
+				}
 			}
 		}
 		carrier.showUserList();
 		if (no!=0){
 			now = users.get(no);
-			carrier.println("找到对战点数为:"+now.getPoint()+"的对手,进入战斗！");
-			if (attendBattle(attendUrl+now.getUid(),"executeBtn")){
+			carrier.println("找到");
+			if (now.getWinPercent().length()>=1)
+				carrier.print("防御点数为"+now.getDefense()+"，");
+			carrier.println("对战点数为:"+now.getPoint()+"的对手，进入战斗！");
+			Boolean result = attendBattle(attendUrl+now.getUid(),"executeBtn");
+			
+			if (result==null)
+				return false;
+			
+			this.pvpNoFresh = 0;
+			if (result){
 				carrier.println("胜利！");
 				File f = new File(this.fileWinList);
 				FileWriter writer = new FileWriter(f, true); 
@@ -598,6 +659,7 @@ public class Core implements Runnable {
 							}
 							if (comboFightMode)
 								playBattle(carrier.pages.EVENT_BATTLE,carrier.pages.EVENT_BATTLE+carrier.pages.SHOW_USER);
+							isMissionActivity = false;
 						} else {
 							carrier.println("PVP活动暂时不开放，已关闭自动参加PVP活动战斗功能。");
 						}
