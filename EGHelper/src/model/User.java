@@ -12,7 +12,29 @@ public class User {
 	private String level;
 	private String friend;
 	private String rank;
-	private String point;	
+	private String point;
+	private String defense;
+	private String winPercent;
+	private boolean special = false;
+		
+	public boolean isSpecial() {
+		return special;
+	}
+	public void setSpecial(boolean special) {
+		this.special = special;
+	}
+	public long getDefense() {
+		return Long.parseLong(this.defense);
+	}
+	public void setDefense(String defense) {
+		this.defense = defense;
+	}
+	public String getWinPercent() {
+		return winPercent;
+	}
+	public void setWinPercent(String winPercent) {
+		this.winPercent = winPercent;
+	}
 	public String getUid() {
 		return uid;
 	}
@@ -68,7 +90,7 @@ public class User {
 		
 		s = this.readLnUntil(br, "separator");
 		s = br.readLine();
-		s = Core.sortString(s, "\">", 'p');
+		s = Core.sortString(s, "\">", '<');
 		this.point = s;
 		br.close();
 		
@@ -76,6 +98,9 @@ public class User {
 	}
 	
 	public String toString(){
-		return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n"+rank+" - "+point+"pt\n";
+		if (this.defense.length()<=1)
+			return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n";
+		else
+			return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n"+rank+" - "+point+"pt\nDefense:"+this.defense+"\nWin:"+this.winPercent+"%\n两倍: "+this.special+"\n";
 	}
 }

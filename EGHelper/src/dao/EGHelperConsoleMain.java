@@ -89,6 +89,7 @@ public class EGHelperConsoleMain extends Thread{
 			peg.setSt_up(Integer.parseInt(carrier.infoMap.get("ST_UP")));
 			peg.setSt_down(Integer.parseInt(carrier.infoMap.get("ST_DOWN")));
 			peg.setPt_min(Integer.parseInt(carrier.infoMap.get("PVP_PT_MAX")));
+			peg.setDefenseMax(Long.parseLong(carrier.infoMap.get("PVP_DEFENSE_MAX")));
 			peg.setBp_combo(Integer.parseInt(carrier.infoMap.get("BP_COMBO")));
 			peg.setUseBPMode(carrier.infoMap.get("NORMALBATTLE").equals("1"));
 			
@@ -130,11 +131,12 @@ public class EGHelperConsoleMain extends Thread{
 				"4.刷新间隔10+0~10+0~"+carrier.infoMap.get("WAIT")+"s；\n"+
 				"5.当BP大于等于"+carrier.infoMap.get("BP_COMBO")+"时继续参加PVP活动战斗；\n"+
 				"6.PVP战斗只攻击校园点数低于+"+carrier.infoMap.get("PVP_PT_MAX")+"的敌人；\n"+
-				"7.当BP大于等于"+carrier.infoMap.get("PVE_NORMAL")+"时，参加好友/自己普通PVE战斗；\n"+
-				"8.当BP大于等于"+carrier.infoMap.get("PVE_LARGE")+"时，参加好友/自己特大PVE战斗；\n"+
-				"9.当BP大于等于"+carrier.infoMap.get("PVE_URGENT")+"时，参加好友/自己紧急PVE战斗；\n"+
-				"10.当BP大于等于4时，自动参加当前PVE任务列表第一的战斗；\n"+
-				"11."
+				"7.PVP活动只攻击防御点数低于+"+carrier.infoMap.get("PVP_DEFENSE_MAX")+"的敌人；\n"+
+				"8.当BP大于等于"+carrier.infoMap.get("PVE_NORMAL")+"时，参加好友/自己普通PVE战斗；\n"+
+				"9.当BP大于等于"+carrier.infoMap.get("PVE_LARGE")+"时，参加好友/自己特大PVE战斗；\n"+
+				"10.当BP大于等于"+carrier.infoMap.get("PVE_URGENT")+"时，参加好友/自己紧急PVE战斗；\n"+
+				"11.当BP大于等于4时，自动参加当前PVE任务列表第一的战斗；\n"+
+				"12."
 		);
 		if (carrier.infoMap.get("NORMALBATTLE").equals("0"))
 			carrier.println("不使用BP参加校园PVP。");

@@ -36,6 +36,16 @@ public class Mission implements Comparable<Mission>{
 	public String getEscapeTime() {
 		return escapeTime;
 	}
+	
+	public int getHpNow() {
+		StringBuffer sb = new StringBuffer();
+		for (int i=0;i<this.hp[0].length();i++){
+			char c = this.hp[0].charAt(i);
+			if (c>='0'&&c<='9')
+				sb.append(this.hp[0].charAt(i));
+		}
+		return Integer.parseInt(sb.toString());
+	}
 
 	public String[] getHp() {
 		return hp;

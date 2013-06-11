@@ -9,8 +9,8 @@ import dao.Core;
 import view.InfoFrame;
 
 public class EGMessenger {
-	public static String title = "制服少女掀裙助手";
-	public static String version = "3.2";
+	public static String title = "EG助手";
+	public static String version = "3.3";
 	
 	public TreeMap<String, String> infoMap = null;
 	
