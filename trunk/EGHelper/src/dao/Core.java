@@ -9,23 +9,24 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 
 import model.App;
+import model.CoreData;
 import model.CoreThreadInterface;
 import model.Mission;
 import model.User;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -35,98 +36,7 @@ import org.apache.http.util.EntityUtils;
 
 import control.EGMessenger;
 
-public class Core implements CoreThreadInterface {
-	private final int randomLeast = 10;
-	private final int randomOther = 10;
-	
-	private DefaultHttpClient hc;
-	private App app;
-	private Random radomer;
-	private String UID;
-	private EGMessenger carrier = null;
-
-	private String host;
-	private String referrer = "http://"+host+"/";
-	private String referrer2;
-	
-	private String fileMainPage = "nowMain.html";
-	private String fileStatusPage = "nowStatus.html";
-	private String filemissionSet = "nowMissions.html";
-	private String fileMissionPage = "MissionNow.html";
-	private String fileQuestPage = "nowQuest.html";
-	private String fileMissionResult = "MissionResult.json";
-	private String fileQuestResult = "QuestResult.json";
-	private String fileBattleList = "nowBattles.html";
-	private String fileBattlePage = "BattleNow.html";
-	private String fileBattleResult = "BattleResult.json";
-	private String fileUserPage = "nowUser.html";
-	private String fileWinList = "WinList.inf";
-	private String fileLostList = "LostList.inf";
-	private String fileBonus = "Bonus.html";
-	private String fileBonusResult = "BonusResult.json";
-	
-	private boolean showAnalyze = true;
-	private boolean isUpgrade = false;
-	
-	private boolean useBPMode = false;
-	public boolean isCanDoBattle() throws IOException {
-		String s = StringScanner.findString("title=\"Battle\">", fileBattleList);
-		if (s.contains("校内定期戦"))
-			return useBPMode;
-		else
-			return (bp>0);
-	}
-	public void setUseBPMode(boolean useBPMode) {
-		this.useBPMode = useBPMode;
-	}
-	
-	private int fightMode = 0; //0 - 全部 1 - 自己 2 - 好友
-	public void setFightMode(int fightMode) {
-		this.fightMode = fightMode;
-	}
-
-	public int st,max_st,bp,max_bp,exp=0,max_exp=9999;
-	private int freebp = 5;
-	public String t1,t2;	
-	private int st_up=20,st_down=20,pt_min=100,bp_combo=5;
-	
-	public TreeMap<Integer, Mission> missions = null;
-	public TreeMap<Integer, User> users = null;
-	public void setSt_up(int st_up) {
-		this.st_up = st_up;
-	}
-	public void setSt_down(int st_down) {
-		this.st_down = st_down;
-	}
-	public void setPt_min(int pt_min) {
-		this.pt_min = pt_min;
-	}
-	public void setBp_combo(int bp_combo) {
-		this.bp_combo = bp_combo;
-	}
-	
-	private int waitTime = 5;
-	public void setWaitTime(int wait){
-		this.waitTime = wait;
-	}
-	private int PVEN = 0, PVEL = 0, PVEU = 0;
-	public void setPVEN(int pVE) {
-		PVEN = pVE;
-	}
-	public void setPVEL(int pVE) {
-		PVEL = pVE;
-	}
-	public void setPVEU(int pVE) {
-		PVEU = pVE;
-	}
-	
-	private long hpmin = 0;
-	private long defenseMax;	
-	public void setDefenseMax(long defenseMax) {
-		this.defenseMax = defenseMax;
-	}
-	
-	private int pvpNoFresh = 0;
+public class Core extends CoreData implements CoreThreadInterface {
 	
 	public Core(DefaultHttpClient dhc,App app,String uID, EGMessenger carrier) {
 		this.host = carrier.pages.HOST;
@@ -160,7 +70,7 @@ public class Core implements CoreThreadInterface {
 		req.setHeader("Origin", "http://"+host);
 	}
 
-	public boolean loadPage(String addr,String filename) throws ClientProtocolException, IOException {
+	public boolean loadPage(String addr,String filename){
 		if (referrer.equals("http://"+this.host+addr))
 			referrer = referrer2;
 		//重复刷新防止referrer改变
@@ -169,22 +79,34 @@ public class Core implements CoreThreadInterface {
 		HttpGet req = new HttpGet(addr);
 		setHeaders(req);
 		carrier.println("Now loading:"+addr);
-		HttpResponse rsp = hc.execute(target, req);
-		HttpEntity entity = rsp.getEntity();
-
+		
+		HttpEntity entity = null;
 		try{
+			HttpResponse rsp = hc.execute(target, req);
+			
+			entity = rsp.getEntity();
 			if (entity != null) {
-				GZIPInputStream gis = new GZIPInputStream(entity.getContent());
+				Header[] headers = rsp.getHeaders("Content-Encoding");
+				InputStream is = null;
+				if (headers.length>0)
+					is = new GZIPInputStream(entity.getContent());
+				else
+					is = entity.getContent();
 				int b;
 				FileOutputStream fos = new FileOutputStream(new File(filename));
-				while((b = gis.read())!=-1)
+				while((b = is.read())!=-1)
 					fos.write(b);
 				fos.close();
 			}
 		} catch(Exception e){
+			carrier.showError(e);
 			return false;
 		} finally{
-			EntityUtils.consume(entity);
+			try {
+				if (entity!=null)
+					EntityUtils.consume(entity);
+			} catch (IOException e) {
+			}
 		}
 		
 		referrer2 = referrer;
@@ -193,7 +115,7 @@ public class Core implements CoreThreadInterface {
 		return true;
 	}
 	
-	public boolean postPage(String addr, String filename, HttpEntity en) throws ClientProtocolException, IOException {
+	public boolean postPage(String addr, String filename, HttpEntity en){
 		if (referrer.equals("http://"+host+addr))
 			referrer = referrer2;
 		
@@ -202,41 +124,54 @@ public class Core implements CoreThreadInterface {
 		setHeaders2(req);
 		req.setEntity(en);
 		carrier.println("Now loading:"+addr);
-		HttpResponse rsp = hc.execute(target, req);
-		HttpEntity entity = rsp.getEntity();
 
+		HttpEntity entity = null;
 		try{
+			HttpResponse rsp = hc.execute(target, req);
+			
+			entity = rsp.getEntity();
 			if (entity != null) {
-				GZIPInputStream gis = new GZIPInputStream(entity.getContent());
+				Header[] headers = rsp.getHeaders("Content-Encoding");
+				InputStream is = null;
+				if (headers.length>0)
+					is = new GZIPInputStream(entity.getContent());
+				else
+					is = entity.getContent();
 				int b;
 				FileOutputStream fos = new FileOutputStream(new File(filename));
-				while((b = gis.read())!=-1)
+				while((b = is.read())!=-1)
 					fos.write(b);
 				fos.close();
 			}
 		} catch(Exception e){
+			carrier.showError(e);
 			return false;
 		} finally{
-			EntityUtils.consume(entity);
+			try {
+				if (entity!=null)
+					EntityUtils.consume(entity);
+			} catch (IOException e) {
+			}
 		}
-		
-		EntityUtils.consume(entity);
 
 		referrer2 = referrer;
 		referrer = "http://"+host+addr;
 		return true;
 	}
 
-	private void getBonus(String s) throws ClientProtocolException, IOException {
+	private boolean getBonus(String s){
 		carrier.println("有未领取奖励，自动领取。。。");
 		String url = StringScanner.sortString(s, this.host, '\"');
-		this.loadPage(url, this.fileBonus);
+		if (this.loadPage(url, this.fileBonus))
+			return false;
 		url = StringScanner.findString("ボーナスを受取る", this.fileBonus);
 		url = StringScanner.sortString(url, host, '\"');
-		this.loadPage(url, this.fileBonusResult);
+		if (this.loadPage(url, this.fileBonusResult))
+			return false;
+		return true;
 	}
 	
-	private boolean attendMission(String mid,String resultFile, String hint) throws FileNotFoundException, ClientProtocolException, IOException{
+	private boolean attendMission(String mid,String resultFile, String hint){
 		carrier.println(new Date() + ": "+ hint);
 		if (bp==0){
 			carrier.println("BP为零，无法继续作战");
@@ -253,13 +188,18 @@ public class Core implements CoreThreadInterface {
 		List<NameValuePair> formParams = new ArrayList<NameValuePair>();   
 		formParams.add(new BasicNameValuePair("healItem_2", "0"));   
 		formParams.add(new BasicNameValuePair("healItem_4", "0"));        
-		formParams.add(new BasicNameValuePair("bp", "1"));     
-		HttpEntity entity = new UrlEncodedFormEntity(formParams, "UTF-8");   
-		postPage(s, this.fileMissionResult, entity);
+		formParams.add(new BasicNameValuePair("bp", "1"));
+		try {
+			HttpEntity entity = new UrlEncodedFormEntity(formParams, "UTF-8");
+			postPage(s, this.fileMissionResult, entity);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return false;
+		}
 		return true;
 	}
 
-	private boolean playMission(String missionUrl) throws ClientProtocolException, IOException {
+	private boolean playMission(String missionUrl){
 		if (missionUrl==null){
 			carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
 			return false;
@@ -268,7 +208,10 @@ public class Core implements CoreThreadInterface {
 		loadPage(missionUrl,filemissionSet);
 		String s = StringScanner.findString("こちら", this.filemissionSet);
 		if (s!=null)
-			getBonus(s);
+			if (getBonus(s))
+				carrier.println("领取成功！");
+			else
+				carrier.println("领取失败！");
 		if (StringScanner.findString("ミッションはありません", this.filemissionSet)!=null){
 			carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
 			return false;
@@ -333,7 +276,7 @@ public class Core implements CoreThreadInterface {
 		return true;
 	}
 	
-	private boolean attendQuest(String key,String fileName,String hint) throws FileNotFoundException, ClientProtocolException, IOException{
+	private boolean attendQuest(String key,String fileName,String hint) throws IOException{
 		carrier.println(new Date() + ": " + hint);
 		String url,authenticity_token,app_token;
 		File f = new File(fileName);
@@ -356,22 +299,28 @@ public class Core implements CoreThreadInterface {
 		return true;
 	}
 	
-	private boolean playQuest(String questUrl) throws ClientProtocolException, IOException {
+	private boolean playQuest(String questUrl){
 		analyzeStatus(true,questUrl);
 		int t = (max_st-(st_up+st_down))/5;
-		if (st>(max_st-bp*t-st_up)){
-			this.attendQuest("quest_execute_form", fileQuestPage, "ST过多，继续探索。");
-		} else if (this.isUpgrade) {
-			this.attendQuest("quest_execute_form", fileQuestPage, "即将升级，继续探索。");
+		try {
+			if (st>(max_st-bp*t-st_up)){
+				this.attendQuest("quest_execute_form", fileQuestPage, "ST过多，继续探索。");
+			} else if (this.isUpgrade) {
+				this.attendQuest("quest_execute_form", fileQuestPage, "即将升级，继续探索。");
+			}
+		} catch (IOException e) {
+			carrier.showError(e);
+			return false;
 		}
 		return true;
 	}
-	private boolean analyzeBattleResult(String fileName) throws IOException{
+	
+	private boolean analyzeBattleResult(String fileName){
 		String s = StringScanner.findString("\\u52dd\\u5229", fileName);//勝利
 		return (s!=null);
 	}
 	
-	private Boolean attendBattle(String battleUrl,String key) throws ClientProtocolException, IOException {
+	private Boolean attendBattle(String battleUrl,String key){
 		this.loadPage(battleUrl, fileBattlePage);
 		String url;
 		if (StringScanner.findString("カード枚数", fileBattlePage)!=null){
@@ -384,12 +333,25 @@ public class Core implements CoreThreadInterface {
 		formParams.add(new BasicNameValuePair("healItem_2", "0"));   
 		formParams.add(new BasicNameValuePair("healItem_4", "0"));        
 		formParams.add(new BasicNameValuePair("bp", "1"));     
-		HttpEntity entity = new UrlEncodedFormEntity(formParams, "UTF-8");
-		postPage(url, this.fileBattleResult, entity);
-		return this.analyzeBattleResult(this.fileBattleResult);
+		try {
+			HttpEntity entity = new UrlEncodedFormEntity(formParams, "UTF-8");
+			postPage(url, this.fileBattleResult, entity);
+			return this.analyzeBattleResult(this.fileBattleResult);
+		} catch (UnsupportedEncodingException e) {
+			carrier.showError(e);
+		}
+		return null;
+	}
+	
+	public boolean isCanDoBattle(){
+		String s = StringScanner.findString("title=\"Battle\">", fileBattleList);
+		if (s.contains("校内定期戦"))
+			return useBPMode;
+		else
+			return (bp>0);
 	}
 
-	private boolean playBattle(String battleUrl, String attendUrl) throws ClientProtocolException, IOException {
+	private boolean playBattle(String battleUrl, String attendUrl){
 		this.loadPage(battleUrl, fileBattleList);
 		if (StringScanner.findString("ご利用いただけません", fileBattleList)!=null){
 			carrier.println("PVP校园战暂时不开放，稍后重试。");
@@ -452,31 +414,37 @@ public class Core implements CoreThreadInterface {
 			if (now.getWinPercent().length()>=1)
 				carrier.print("防御点数为"+now.getDefense()+"，");
 			carrier.println("对战点数为:"+now.getPoint()+"的对手，进入战斗！");
-			Boolean result = attendBattle(attendUrl+now.getUid(),"executeBtn");
 			
-			if (result==null)
-				return false;
-			
-			this.pvpNoFresh = 0;
-			if (result){
-				carrier.println("胜利！");
-				File f = new File(this.fileWinList);
-				FileWriter writer = new FileWriter(f, true); 
-		        writer.write(now.getUid()+"\r\n");
-		        writer.close();
-			} else
-				carrier.println("失败！");
-				File f = new File(this.fileLostList);
-				FileWriter writer = new FileWriter(f, true); 
-				writer.write(now.getUid()+"\r\n");
-				writer.close();
+			try {
+				Boolean result = attendBattle(attendUrl+now.getUid(),"executeBtn");
+				
+				if (result==null)
+					return false;
+				
+				this.pvpNoFresh = 0;
+				if (result){
+					carrier.println("胜利！");
+					File f = new File(this.fileWinList);
+					FileWriter writer = new FileWriter(f, true); 
+				    writer.write(now.getUid()+"\r\n");
+				    writer.close();
+				} else
+					carrier.println("失败！");
+					File f = new File(this.fileLostList);
+					FileWriter writer = new FileWriter(f, true); 
+					writer.write(now.getUid()+"\r\n");
+					writer.close();
+			} catch (IOException e) {
+				carrier.showError(e);
+			}
 		}
 		return true;		
 	}
 
-	private void analyzeStatus(boolean reload,String url) throws IOException{
+	private boolean analyzeStatus(boolean reload,String url){
 		if (reload)
-			loadPage(url,fileQuestPage);
+			if (!loadPage(url,fileQuestPage))
+				return false;
 		String s;
 		s = StringScanner.findString("<span id=\"st\">",fileQuestPage);
 		s = s.replace("</span>", "");
@@ -494,63 +462,82 @@ public class Core implements CoreThreadInterface {
 		s = s.replace("</span>", "");
 		s = s.replace("<span id=\"max_bp\">", "");
 		max_bp = Integer.parseInt(s);
+		return true;
 	}
 
-	private boolean analyzeTime(String url1,String url2,String UID) throws ClientProtocolException, IOException {
+	private boolean analyzeTime(String url1,String url2,String UID){
 		loadPage(url1,fileMainPage);
-		try {
-			loadPage(url2+UID,fileStatusPage);
-		} catch (java.util.zip.ZipException e) {
+		if (!loadPage(url2+UID,fileStatusPage)){
 			carrier.println("UID设置错误，无法获取个人页面，请查看。");
 			return false;
 		}
 		
-		File f = new File(fileStatusPage);
-		BufferedReader br = new BufferedReader(new FileReader(f));
-		String s;
-		
-		while ((s = br.readLine())!=null){
-			if (s.contains("経験値:"))
-				break;
+		try {
+			File f = new File(fileStatusPage);
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			String s;
+			
+			while ((s = br.readLine())!=null){
+				if (s.contains("経験値:"))
+					break;
+			}
+			s = StringScanner.sortString(s,":</span> ",'<');
+			exp = Integer.parseInt(s.substring(0, s.indexOf('/')));
+			max_exp = Integer.parseInt(s.substring(s.indexOf('/')+1,s.length()));
+			
+			while ((s = br.readLine())!=null){
+				if (s.contains("全回復まで"))
+					break;
+			}
+			if (s==null){
+				t1="--";
+				t2="--";
+				return true;
+			}
+			t1 = StringScanner.sortString(s,"全回復まで",'<');
+			
+			while ((s = br.readLine())!=null){
+				if (s.contains("全回復まで"))
+					break;
+			}
+			if (s==null){
+				t2="--";
+				return true;
+			}
+			t2 = StringScanner.sortString(s,"全回復まで",'<');
+			br.close();
+		} catch (NumberFormatException e) {
+			carrier.showError(e);
+			return false;
+		} catch (FileNotFoundException e) {
+			carrier.showError(e);
+			return false;
+		} catch (IOException e) {
+			carrier.showError(e);
+			return false;
 		}
-		s = StringScanner.sortString(s,":</span> ",'<');
-		exp = Integer.parseInt(s.substring(0, s.indexOf('/')));
-		max_exp = Integer.parseInt(s.substring(s.indexOf('/')+1,s.length()));
-		
-		while ((s = br.readLine())!=null){
-			if (s.contains("全回復まで"))
-				break;
-		}
-		if (s==null){
-			t1="--";
-			t2="--";
-			return true;
-		}
-		t1 = StringScanner.sortString(s,"全回復まで",'<');
-		
-		while ((s = br.readLine())!=null){
-			if (s.contains("全回復まで"))
-				break;
-		}
-		if (s==null){
-			t2="--";
-			return true;
-		}
-		t2 = StringScanner.sortString(s,"全回復まで",'<');
-		br.close();
 		return true;
 	}
 	
-	private void analyzeLinks(String fileMainPage) throws IOException {
+	private boolean analyzeLinks(String fileMainPage){
 		String s = StringScanner.findString(">quest<", fileMainPage);
 		s = StringScanner.sortString(s, this.host, '\"');
+		if (s==null)
+			return false;
 		carrier.pages.QUEST = s;
+		
 		s = StringScanner.findString(">ミッション<", fileMainPage);
 		s = StringScanner.sortString(s, this.host, '\"');
+		if (s==null)
+			return false;
 		carrier.pages.MISSION = s;
+		
 		s = StringScanner.findString(">校内定期戦<", fileMainPage);
 		s = StringScanner.sortString(s, this.host, '\"');
+		if (s==null)
+			return false;
 		carrier.pages.BATTLE = s;
+		return true;
 	}
 	
 	private long getRandomTime(int i, int j){
@@ -564,7 +551,7 @@ public class Core implements CoreThreadInterface {
 	 * @param fileName 加载后的页面文件名
 	 * @return 如果当前页面可战斗，返回true，否则返回false
 	 */	
-	private boolean checkActivity(String fileName) throws IOException{
+	private boolean checkActivity(String fileName){
 		return (StringScanner.findString("利用いただけません", fileName)==null);
 	}
 
@@ -595,107 +582,104 @@ public class Core implements CoreThreadInterface {
 	}
 	
 	public void run() {
-		try {
-			boolean exitflag = true;
-			boolean comboFightMode = false;
-			boolean isBattleActivity = true;
-			boolean isMissionActivity = true;
+		boolean exitflag = true;
+		boolean comboFightMode = false;
+		boolean isBattleActivity = true;
+		boolean isMissionActivity = true;
+		
+		carrier.println("开始解析链接。。。。。。");
+		exitflag &= analyzeTime(
+				carrier.pages.MYPAGE,
+				carrier.pages.USER_DETAIL,
+				this.UID
+		);
+		if (!this.analyzeLinks(this.fileMainPage)){
+			carrier.showError("解析失败");
+			return;
+		}
+		carrier.println("解析完毕");
+		carrier.println("Start: "+new Date());
+					
+		while(exitflag){
+			if (!analyzeStatus(true,carrier.pages.QUEST))
+				continue;
 			
-			carrier.println("开始解析链接。。。。。。");
+			if (isBattleActivity){
+				loadPage(carrier.pages.EVENT_BATTLE,this.fileBattleList);
+				isBattleActivity = this.checkActivity(this.fileBattleList);
+				if (isBattleActivity){
+					String s;
+					s = StringScanner.findString("3倍", this.fileBattleList);
+					if (s!=null)
+						carrier.println("踩中三倍！剩余："+StringScanner.sortString(s, "\">", '<')+"秒。");
+					s = StringScanner.findString("バトルガチャチケット", this.fileBattleList);
+					if (s!=null){
+						carrier.println("连胜中，剩余："+StringScanner.sortString(s, "class=\"colorR\">", '<'));
+						comboFightMode = true;
+					}
+					if (comboFightMode)
+						playBattle(carrier.pages.EVENT_BATTLE,carrier.pages.EVENT_BATTLE+carrier.pages.SHOW_USER);
+					isMissionActivity = false;
+				} else {
+					carrier.println("PVP活动暂时不开放，已关闭自动参加PVP活动战斗功能。");
+				}
+			}
+			
+			if (isMissionActivity){
+				isMissionActivity = this.playMission(carrier.pages.MISSION);
+			}
+			
+			if (freebp>0||this.useBPMode)
+				playBattle(carrier.pages.BATTLE, carrier.pages.BATTLE+carrier.pages.SHOW_USER);
+			
+			exitflag &= this.playQuest(carrier.pages.QUEST);
+			
+			if (!analyzeStatus(false,carrier.pages.QUEST))
+				continue;
+			
 			exitflag &= analyzeTime(
 					carrier.pages.MYPAGE,
 					carrier.pages.USER_DETAIL,
 					this.UID
 			);
-			this.analyzeLinks(this.fileMainPage);
-			carrier.println("解析完毕");
-			carrier.println("Start: "+new Date());
-						
-			while(exitflag){
-				try{
-					analyzeStatus(true,carrier.pages.QUEST);
-					
-					if (isBattleActivity){
-						loadPage(carrier.pages.EVENT_BATTLE,this.fileBattleList);
-						isBattleActivity = this.checkActivity(this.fileBattleList);
-						if (isBattleActivity){
-							String s;
-							s = StringScanner.findString("3倍", this.fileBattleList);
-							if (s!=null)
-								carrier.println("踩中三倍！剩余："+StringScanner.sortString(s, "\">", '<')+"秒。");
-							s = StringScanner.findString("バトルガチャチケット", this.fileBattleList);
-							if (s!=null){
-								carrier.println("连胜中，剩余："+StringScanner.sortString(s, "class=\"colorR\">", '<'));
-								comboFightMode = true;
-							}
-							if (comboFightMode)
-								playBattle(carrier.pages.EVENT_BATTLE,carrier.pages.EVENT_BATTLE+carrier.pages.SHOW_USER);
-							isMissionActivity = false;
-						} else {
-							carrier.println("PVP活动暂时不开放，已关闭自动参加PVP活动战斗功能。");
-						}
-					}
-					
-					if (isMissionActivity){
-						isMissionActivity = this.playMission(carrier.pages.MISSION);
-					}
-					
-					if (freebp>0||this.useBPMode)
-						playBattle(carrier.pages.BATTLE, carrier.pages.BATTLE+carrier.pages.SHOW_USER);
-					
-					exitflag &= this.playQuest(carrier.pages.QUEST);
-					
-					analyzeStatus(false,carrier.pages.QUEST);
-					
-					exitflag &= analyzeTime(
-							carrier.pages.MYPAGE,
-							carrier.pages.USER_DETAIL,
-							this.UID
-					);
-					
-					if (carrier.isModeGUI())
-						carrier.refreshBar();
-					if (this.showAnalyze){
-						if (!carrier.isModeGUI())
-							carrier.println("ST: "+st+" / "+max_st+"\tBP: "+bp+" / "+max_bp+"\tEP: "+exp+" / "+max_exp);
-						int i = max_exp-exp-st;
-						if (i<0)
-							i=0;
-						String t3;
-						t3 = (i/60<10)?"0":"";
-						t3 = t3 + i/60 + ":";
-						String t = (i%60<10)?"0":"";
-						t3 = t3 + t + i%60;
-						carrier.println("STTime:"+t1+"\tBPTime:"+t2+"\tUpgrade:"+t3);
-					}
-				} catch (Exception e){
-					carrier.showError(e);
-				}
-				
-				if (isBattleActivity){
-					if (bp>=this.bp_combo)
-						comboFightMode = true;
-					if (bp==0)
-						comboFightMode = false;
-				}
-				
-				{
-					long t = getRandomTime(this.randomOther, this.waitTime);
-					carrier.println("等待: "+t+"s");
-					this.clearFiles(".");
-					carrier.setFight(true);
-					try{
-						Thread.sleep((long)t*1000L);
-					} catch(InterruptedException e){
-					} finally {
-						carrier.println("\n已唤醒："+new Date());
-					}
-					carrier.setFight(false);
-				}
+			
+			if (carrier.isModeGUI())
+				carrier.refreshBar();
+			if (this.showAnalyze){
+				if (!carrier.isModeGUI())
+					carrier.println("ST: "+st+" / "+max_st+"\tBP: "+bp+" / "+max_bp+"\tEP: "+exp+" / "+max_exp);
+				int i = max_exp-exp-st;
+				if (i<0)
+					i=0;
+				String t3;
+				t3 = (i/60<10)?"0":"";
+				t3 = t3 + i/60 + ":";
+				String t = (i%60<10)?"0":"";
+				t3 = t3 + t + i%60;
+				carrier.println("STTime:"+t1+"\tBPTime:"+t2+"\tUpgrade:"+t3);
 			}
-			carrier.println("Stop: "+new Date());
-		} catch (IOException e) {
-			carrier.showError(e);
+			
+			if (isBattleActivity){
+				if (bp>=this.bp_combo)
+					comboFightMode = true;
+				if (bp==0)
+					comboFightMode = false;
+			}
+			
+			{
+				long t = getRandomTime(this.randomOther, this.waitTime);
+				carrier.println("等待: "+t+"s");
+				this.clearFiles(".");
+				carrier.setFight(true);
+				try{
+					Thread.sleep((long)t*1000L);
+				} catch(InterruptedException e){
+				} finally {
+					carrier.println("\n已唤醒："+new Date());
+				}
+				carrier.setFight(false);
+			}
 		}
+		carrier.println("Stop: "+new Date());
 	}
 }

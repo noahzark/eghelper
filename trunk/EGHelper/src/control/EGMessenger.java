@@ -10,7 +10,7 @@ import view.InfoFrame;
 
 public class EGMessenger {
 	public static String title = "EG助手";
-	public static String version = "3.3";
+	public static String version = "4.0";
 	
 	public TreeMap<String, String> infoMap = null;
 	
@@ -135,12 +135,16 @@ public class EGMessenger {
 		}
 	}
 	
+	public void showError(String errorCause){
+		println("错误: "+errorCause+"，请联系原作者或前往http://eghelper.sts-ol.com升级到最新版本。");
+	}
+	
 	public void showError(Exception e){
 		if (this.isDebugMode()){
 			println(new Date()+"");
 			e.printStackTrace();
 		}
-		println("错误: "+e.toString()+". 请联系作者。");
+		this.showError(e.toString());
 	}
 
 	public void refreshBar() {

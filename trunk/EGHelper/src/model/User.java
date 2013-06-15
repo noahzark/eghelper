@@ -1,6 +1,7 @@
 package model;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -65,7 +66,7 @@ public class User {
 		return s;
 	}
 	
-	public boolean getUserInfo(String src) throws IOException{
+	public boolean getUserInfo(String src){
 		if (StringScanner.findString(uid, src)==null)
 			return false;
 		String s;
@@ -81,18 +82,26 @@ public class User {
 		s = StringScanner.sortString(s, "</span> ", '/');
 		this.friend = s;
 
-		File f = new File(src);
-		BufferedReader br = new BufferedReader(new FileReader(f));
-		s = this.readLnUntil(br, "separator");
-		s = br.readLine();
-		s = StringScanner.sortString(s, "\">", '<');
-		this.rank = s;
-		
-		s = this.readLnUntil(br, "separator");
-		s = br.readLine();
-		s = StringScanner.sortString(s, "\">", '<');
-		this.point = s;
-		br.close();
+		try {
+			File f = new File(src);
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			s = this.readLnUntil(br, "separator");
+			s = br.readLine();
+			s = StringScanner.sortString(s, "\">", '<');
+			this.rank = s;
+			
+			s = this.readLnUntil(br, "separator");
+			s = br.readLine();
+			s = StringScanner.sortString(s, "\">", '<');
+			this.point = s;
+			br.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
 		
 		return true;
 	}

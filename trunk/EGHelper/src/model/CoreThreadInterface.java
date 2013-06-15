@@ -15,17 +15,18 @@ public interface CoreThreadInterface extends Runnable {
 	
 	/**
 	 * 使用Get方法获取网页内容
-	 * @param addr 目标网页地址, fileName 获取后的网页存储位置
+	 * @param addr 目标网页地址
+	 * @param fileName 获取后的网页存储位置
 	 * @return 如果页面载入成功，返回true，否则返回false
-	 * @throws ClientProtocolException, IOException
 	 */	
-	abstract boolean loadPage(String addr,String fileName) throws ClientProtocolException, IOException;
+	abstract boolean loadPage(String addr,String fileName);
 	
 	/**
 	 * 使用Post方法获取网页内容
-	 * @param addr 目标网页地址, fileName 获取后的网页存储位置, httpEntity 用来存放请求参数内容
+	 * @param addr 目标网页地址
+	 * @param fileName 获取后的网页存储位置
+	 * @param httpEntity 用来存放请求参数内容
 	 * @return 如果页面载入成功，返回true，否则返回false
-	 * @throws ClientProtocolException, IOException
 	 */	
 	abstract boolean postPage(String addr, String fileName, HttpEntity httpEntity) throws ClientProtocolException, IOException;
 	
