@@ -2,21 +2,28 @@ package dao;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
 public class StringScanner {
-	public static String findString(String key,String fileName) throws IOException {
+	public static String findString(String key,String fileName) {
 		File f = new File(fileName);
-		BufferedReader br = new BufferedReader(new FileReader(f));
-		String s;
-		while ((s = br.readLine())!=null){
-			if (s.contains(key)){
-				br.close();
-				return s;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			String s;
+			while ((s = br.readLine())!=null){
+				if (s.contains(key)){
+					br.close();
+					return s;
+				}
 			}
+			br.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		br.close();
 		return null;
 	}
 	
