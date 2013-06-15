@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import dao.Core;
+import dao.StringScanner;
 
 public class User {
 	private String uid;
@@ -13,8 +13,8 @@ public class User {
 	private String friend;
 	private String rank;
 	private String point;
-	private String defense;
-	private String winPercent;
+	private String defense="";
+	private String winPercent="";
 	private boolean special = false;
 		
 	public boolean isSpecial() {
@@ -66,31 +66,31 @@ public class User {
 	}
 	
 	public boolean getUserInfo(String src) throws IOException{
-		if (Core.findString(uid, src)==null)
+		if (StringScanner.findString(uid, src)==null)
 			return false;
 		String s;
-		s = Core.findString("Profile Page", src);
-		s = Core.sortString(s, "\">", '<');
+		s = StringScanner.findString("Profile Page", src);
+		s = StringScanner.sortString(s, "\">", '<');
 		this.name = s;
 		
-		s = Core.findString("Lv:", src);
-		s = Core.sortString(s, "</span> ", '<');
+		s = StringScanner.findString("Lv:", src);
+		s = StringScanner.sortString(s, "</span> ", '<');
 		this.level = s;
 		
-		s = Core.findString("フレンド:", src);
-		s = Core.sortString(s, "</span> ", '/');
+		s = StringScanner.findString("フレンド:", src);
+		s = StringScanner.sortString(s, "</span> ", '/');
 		this.friend = s;
 
 		File f = new File(src);
 		BufferedReader br = new BufferedReader(new FileReader(f));
 		s = this.readLnUntil(br, "separator");
 		s = br.readLine();
-		s = Core.sortString(s, "\">", '<');
+		s = StringScanner.sortString(s, "\">", '<');
 		this.rank = s;
 		
 		s = this.readLnUntil(br, "separator");
 		s = br.readLine();
-		s = Core.sortString(s, "\">", '<');
+		s = StringScanner.sortString(s, "\">", '<');
 		this.point = s;
 		br.close();
 		
@@ -98,9 +98,9 @@ public class User {
 	}
 	
 	public String toString(){
-		if (this.defense.length()<=1)
-			return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n";
-		else
-			return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n"+rank+" - "+point+"pt\nDefense:"+this.defense+"\nWin:"+this.winPercent+"%\n两倍: "+this.special+"\n";
+		if (this.defense!=null)
+			if (this.defense.length()>1)
+				return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n"+rank+" - "+point+"pt\nDefense:"+this.defense+"\nWin:"+this.winPercent+"%\n两倍: "+this.special+"\n";
+		return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n";
 	}
 }

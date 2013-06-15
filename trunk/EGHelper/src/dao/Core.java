@@ -17,6 +17,7 @@ import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 
 import model.App;
+import model.CoreThreadInterface;
 import model.Mission;
 import model.User;
 
@@ -34,9 +35,9 @@ import org.apache.http.util.EntityUtils;
 
 import control.EGMessenger;
 
-public class Core implements Runnable {
-	private final int randomLeast = 5;
-	private final int randomOther = 5;
+public class Core implements CoreThreadInterface {
+	private final int randomLeast = 10;
+	private final int randomOther = 10;
 	
 	private DefaultHttpClient hc;
 	private App app;
@@ -69,7 +70,7 @@ public class Core implements Runnable {
 	
 	private boolean useBPMode = false;
 	public boolean isCanDoBattle() throws IOException {
-		String s = Core.findString("title=\"Battle\">", fileBattleList);
+		String s = StringScanner.findString("title=\"Battle\">", fileBattleList);
 		if (s.contains("校内定期戦"))
 			return useBPMode;
 		else
@@ -159,7 +160,7 @@ public class Core implements Runnable {
 		req.setHeader("Origin", "http://"+host);
 	}
 
-	private void loadPage(String addr,String filename) throws ClientProtocolException, IOException {
+	public boolean loadPage(String addr,String filename) throws ClientProtocolException, IOException {
 		if (referrer.equals("http://"+this.host+addr))
 			referrer = referrer2;
 		//重复刷新防止referrer改变
@@ -181,7 +182,7 @@ public class Core implements Runnable {
 				fos.close();
 			}
 		} catch(Exception e){
-			
+			return false;
 		} finally{
 			EntityUtils.consume(entity);
 		}
@@ -189,9 +190,10 @@ public class Core implements Runnable {
 		referrer2 = referrer;
 		referrer = "http://"+this.host+addr;
 		//页面前进刷新referrer
+		return true;
 	}
 	
-	private void postPage(String addr, String filename, HttpEntity en) throws ClientProtocolException, IOException {
+	public boolean postPage(String addr, String filename, HttpEntity en) throws ClientProtocolException, IOException {
 		if (referrer.equals("http://"+host+addr))
 			referrer = referrer2;
 		
@@ -203,62 +205,37 @@ public class Core implements Runnable {
 		HttpResponse rsp = hc.execute(target, req);
 		HttpEntity entity = rsp.getEntity();
 
-		if (entity != null) {
-			InputStream gis = entity.getContent();
-			int b;
-			FileOutputStream fos = new FileOutputStream(new File(filename));
-			while((b = gis.read())!=-1)
-				fos.write(b);
-			fos.close();
+		try{
+			if (entity != null) {
+				GZIPInputStream gis = new GZIPInputStream(entity.getContent());
+				int b;
+				FileOutputStream fos = new FileOutputStream(new File(filename));
+				while((b = gis.read())!=-1)
+					fos.write(b);
+				fos.close();
+			}
+		} catch(Exception e){
+			return false;
+		} finally{
+			EntityUtils.consume(entity);
 		}
 		
 		EntityUtils.consume(entity);
 
 		referrer2 = referrer;
 		referrer = "http://"+host+addr;
-	}
-
-	public static String findString(String key,String fileName) throws IOException {
-		File f = new File(fileName);
-		BufferedReader br = new BufferedReader(new FileReader(f));
-		String s;
-		while ((s = br.readLine())!=null){
-			if (s.contains(key)){
-				br.close();
-				return s;
-			}
-		}
-		br.close();
-		return null;
-	}
-	
-	public static String sortString(String s,String front,char back){
-		StringBuffer sb = new StringBuffer();
-		int i;
-		if (s == null)
-			return null;
-		for (i=0;i<s.length();i++){
-			sb.append(s.charAt(i));
-			if (sb.toString().contains(front))
-				break;
-		}
-		sb = new StringBuffer();
-		for (i++;i<s.length();i++){
-			if (s.charAt(i)==back)
-				break;
-			sb.append(s.charAt(i));
-		}
-		return sb.toString();
+		return true;
 	}
 
 	private void getBonus(String s) throws ClientProtocolException, IOException {
 		carrier.println("有未领取奖励，自动领取。。。");
-		String url = Core.sortString(s, this.host, '\"');
+		String url = StringScanner.sortString(s, this.host, '\"');
 		this.loadPage(url, this.fileBonus);
-		url = Core.findString("ボーナスを受取る", this.fileBonus);
-		url = Core.sortString(url, host, '\"');
+		url = StringScanner.findString("ボーナスを受取る", this.fileBonus);
+		url = StringScanner.sortString(url, host, '\"');
 		this.loadPage(url, this.fileBonusResult);
 	}
+	
 	private boolean attendMission(String mid,String resultFile, String hint) throws FileNotFoundException, ClientProtocolException, IOException{
 		carrier.println(new Date() + ": "+ hint);
 		if (bp==0){
@@ -266,13 +243,13 @@ public class Core implements Runnable {
 			return true;
 		}
 		this.loadPage(carrier.pages.MISSION+"/show/"+mid, resultFile);
-		if (Core.findString("カード枚数", resultFile)!=null){
+		if (StringScanner.findString("カード枚数", resultFile)!=null){
 			carrier.println("卡片数达到上限，无法继续作战，请先到新闻部整理卡牌。");
 			return true;
 		}
 		String s;
-		s = findString("id=\"executeBtn\"",resultFile);
-		s = sortString(s, host, '\"');
+		s = StringScanner.findString("id=\"executeBtn\"",resultFile);
+		s = StringScanner.sortString(s, host, '\"');
 		List<NameValuePair> formParams = new ArrayList<NameValuePair>();   
 		formParams.add(new BasicNameValuePair("healItem_2", "0"));   
 		formParams.add(new BasicNameValuePair("healItem_4", "0"));        
@@ -289,10 +266,10 @@ public class Core implements Runnable {
 		}
 		
 		loadPage(missionUrl,filemissionSet);
-		String s = Core.findString("こちら", this.filemissionSet);
+		String s = StringScanner.findString("こちら", this.filemissionSet);
 		if (s!=null)
 			getBonus(s);
-		if (Core.findString("ミッションはありません", this.filemissionSet)!=null){
+		if (StringScanner.findString("ミッションはありません", this.filemissionSet)!=null){
 			carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
 			return false;
 		}
@@ -366,10 +343,10 @@ public class Core implements Runnable {
 			if (s.contains(key))
 				break;
 		}
-		url = sortString(s,host,'"');
-		authenticity_token = sortString(s,"value=\"",'"');
+		url = StringScanner.sortString(s,host,'"');
+		authenticity_token = StringScanner.sortString(s,"value=\"",'"');
 		s = br.readLine();
-		app_token = sortString(s,"value=\"",'"');
+		app_token = StringScanner.sortString(s,"value=\"",'"');
 		br.close();
 		List<NameValuePair> formParams = new ArrayList<NameValuePair>();   
 		formParams.add(new BasicNameValuePair("authenticity_token", authenticity_token));   
@@ -390,19 +367,19 @@ public class Core implements Runnable {
 		return true;
 	}
 	private boolean analyzeBattleResult(String fileName) throws IOException{
-		String s = Core.findString("\\u52dd\\u5229", fileName);//勝利
+		String s = StringScanner.findString("\\u52dd\\u5229", fileName);//勝利
 		return (s!=null);
 	}
 	
 	private Boolean attendBattle(String battleUrl,String key) throws ClientProtocolException, IOException {
 		this.loadPage(battleUrl, fileBattlePage);
 		String url;
-		if (Core.findString("カード枚数", fileBattlePage)!=null){
+		if (StringScanner.findString("カード枚数", fileBattlePage)!=null){
 			carrier.println("卡片数达到上限，无法继续作战，请先到新闻部整理卡牌。");
 			return null;
 		}
-		String s = Core.findString(key, fileBattlePage);
-		url = sortString(s,host,'"');
+		String s = StringScanner.findString(key, fileBattlePage);
+		url = StringScanner.sortString(s,host,'"');
 		List<NameValuePair> formParams = new ArrayList<NameValuePair>();   
 		formParams.add(new BasicNameValuePair("healItem_2", "0"));   
 		formParams.add(new BasicNameValuePair("healItem_4", "0"));        
@@ -414,12 +391,12 @@ public class Core implements Runnable {
 
 	private boolean playBattle(String battleUrl, String attendUrl) throws ClientProtocolException, IOException {
 		this.loadPage(battleUrl, fileBattleList);
-		if (Core.findString("ご利用いただけません", fileBattleList)!=null){
+		if (StringScanner.findString("ご利用いただけません", fileBattleList)!=null){
 			carrier.println("PVP校园战暂时不开放，稍后重试。");
 			freebp = 0;
 			return false;
 		} else {
-			String s = findString("活動力の消費なしで", fileBattleList);
+			String s = StringScanner.findString("活動力の消費なしで", fileBattleList);
 			if (s==null){
 				freebp = 0;
 				if (!this.isCanDoBattle()){
@@ -427,7 +404,7 @@ public class Core implements Runnable {
 					return false;
 				}
 			} else {
-				s = sortString(s, "\">", '<');
+				s = StringScanner.sortString(s, "\">", '<');
 				freebp = Integer.parseInt(s);
 			}
 		}
@@ -443,7 +420,7 @@ public class Core implements Runnable {
 		
 		int no = 0;
 		User now;
-		if (Core.findString("人気投票", fileBattleList)!=null&&(pvpNoFresh<=20)){
+		if (StringScanner.findString("人気投票", fileBattleList)!=null&&(pvpNoFresh<=20)){
 			for (int i=1;i<=users.size();i++){
 				now = users.get(i);
 				this.loadPage(carrier.pages.USER_DETAIL+now.getUid(), fileUserPage);
@@ -501,29 +478,22 @@ public class Core implements Runnable {
 		if (reload)
 			loadPage(url,fileQuestPage);
 		String s;
-		s = findString("<span id=\"st\">",fileQuestPage);
+		s = StringScanner.findString("<span id=\"st\">",fileQuestPage);
 		s = s.replace("</span>", "");
 		s = s.replace("<span id=\"st\">", "");
 		st = Integer.parseInt(s);
-		s = findString("<span id=\"max_st\">",fileQuestPage);
+		s = StringScanner.findString("<span id=\"max_st\">",fileQuestPage);
 		s = s.replace("</span>", "");
 		s = s.replace("<span id=\"max_st\">", "");
 		max_st = Integer.parseInt(s);
-		s = findString("<span id=\"bp\">",fileQuestPage);
+		s = StringScanner.findString("<span id=\"bp\">",fileQuestPage);
 		s = s.replace("</span>", "");
 		s = s.replace("<span id=\"bp\">", "");
 		bp = Integer.parseInt(s);
-		s = findString("<span id=\"max_bp\">",fileQuestPage);
+		s = StringScanner.findString("<span id=\"max_bp\">",fileQuestPage);
 		s = s.replace("</span>", "");
 		s = s.replace("<span id=\"max_bp\">", "");
 		max_bp = Integer.parseInt(s);
-		
-		if (st+exp>max_exp){
-			this.attendQuest("quest_execute_form", fileQuestPage, "即将升级，继续探索。");
-			this.isUpgrade = true;
-		} else {
-			this.isUpgrade = false;
-		}
 	}
 
 	private boolean analyzeTime(String url1,String url2,String UID) throws ClientProtocolException, IOException {
@@ -543,7 +513,7 @@ public class Core implements Runnable {
 			if (s.contains("経験値:"))
 				break;
 		}
-		s = sortString(s,":</span> ",'<');
+		s = StringScanner.sortString(s,":</span> ",'<');
 		exp = Integer.parseInt(s.substring(0, s.indexOf('/')));
 		max_exp = Integer.parseInt(s.substring(s.indexOf('/')+1,s.length()));
 		
@@ -556,7 +526,7 @@ public class Core implements Runnable {
 			t2="--";
 			return true;
 		}
-		t1 = sortString(s,"全回復まで",'<');
+		t1 = StringScanner.sortString(s,"全回復まで",'<');
 		
 		while ((s = br.readLine())!=null){
 			if (s.contains("全回復まで"))
@@ -566,20 +536,20 @@ public class Core implements Runnable {
 			t2="--";
 			return true;
 		}
-		t2 = sortString(s,"全回復まで",'<');
+		t2 = StringScanner.sortString(s,"全回復まで",'<');
 		br.close();
 		return true;
 	}
 	
 	private void analyzeLinks(String fileMainPage) throws IOException {
-		String s = Core.findString(">quest<", fileMainPage);
-		s = Core.sortString(s, this.host, '\"');
+		String s = StringScanner.findString(">quest<", fileMainPage);
+		s = StringScanner.sortString(s, this.host, '\"');
 		carrier.pages.QUEST = s;
-		s = Core.findString(">ミッション<", fileMainPage);
-		s = Core.sortString(s, this.host, '\"');
+		s = StringScanner.findString(">ミッション<", fileMainPage);
+		s = StringScanner.sortString(s, this.host, '\"');
 		carrier.pages.MISSION = s;
-		s = Core.findString(">校内定期戦<", fileMainPage);
-		s = Core.sortString(s, this.host, '\"');
+		s = StringScanner.findString(">校内定期戦<", fileMainPage);
+		s = StringScanner.sortString(s, this.host, '\"');
 		carrier.pages.BATTLE = s;
 	}
 	
@@ -595,11 +565,11 @@ public class Core implements Runnable {
 	 * @return 如果当前页面可战斗，返回true，否则返回false
 	 */	
 	private boolean checkActivity(String fileName) throws IOException{
-		return (Core.findString("利用いただけません", fileName)==null);
+		return (StringScanner.findString("利用いただけません", fileName)==null);
 	}
 
-	private void clearFiles() {
-		File f = new File(".");
+	public void clearFiles(String dirPath) {
+		File f = new File(dirPath);
 		FilenameFilter ff = new FilenameFilter(){
 			public boolean accept(File arg0, String filename) {
 				if (filename.toLowerCase().endsWith(".html"))
@@ -623,6 +593,7 @@ public class Core implements Runnable {
 		for (int i=0;i<files.length;i++)
 			files[i].delete();
 	}
+	
 	public void run() {
 		try {
 			boolean exitflag = true;
@@ -649,12 +620,12 @@ public class Core implements Runnable {
 						isBattleActivity = this.checkActivity(this.fileBattleList);
 						if (isBattleActivity){
 							String s;
-							s = Core.findString("3倍", this.fileBattleList);
+							s = StringScanner.findString("3倍", this.fileBattleList);
 							if (s!=null)
-								carrier.println("踩中三倍！剩余："+Core.sortString(s, "\">", '<')+"秒。");
-							s = Core.findString("バトルガチャチケット", this.fileBattleList);
+								carrier.println("踩中三倍！剩余："+StringScanner.sortString(s, "\">", '<')+"秒。");
+							s = StringScanner.findString("バトルガチャチケット", this.fileBattleList);
 							if (s!=null){
-								carrier.println("连胜中，剩余："+Core.sortString(s, "class=\"colorR\">", '<'));
+								carrier.println("连胜中，剩余："+StringScanner.sortString(s, "class=\"colorR\">", '<'));
 								comboFightMode = true;
 							}
 							if (comboFightMode)
@@ -711,7 +682,7 @@ public class Core implements Runnable {
 				{
 					long t = getRandomTime(this.randomOther, this.waitTime);
 					carrier.println("等待: "+t+"s");
-					this.clearFiles();
+					this.clearFiles(".");
 					carrier.setFight(true);
 					try{
 						Thread.sleep((long)t*1000L);
