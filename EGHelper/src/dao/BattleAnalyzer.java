@@ -16,7 +16,7 @@ public class BattleAnalyzer {
 	}
 	
 	public TreeMap<Integer, User> analyze() throws IOException{
-		if (Core.findString("人気投票", src)!=null)
+		if (StringScanner.findString("人気投票", src)!=null)
 			isNormal = false;
 		else
 			isNormal = true;
@@ -28,7 +28,7 @@ public class BattleAnalyzer {
 			String s;
 			while ((s = br.readLine())!=null){
 				if (s.contains("選択")){
-					s = Core.sortString(s, "user_id=", '\"');
+					s = StringScanner.sortString(s, "user_id=", '\"');
 					users.put(no++, new User(s));
 				}
 			}
@@ -48,7 +48,7 @@ public class BattleAnalyzer {
 							s.setLength(0);
 						}
 						if (s.toString().contains("勝率")){
-							String s2 = Core.sortString(s.toString(), "pt:約", ')');
+							String s2 = StringScanner.sortString(s.toString(), "pt:約", ')');
 							defense=s2;
 							s.setLength(0);
 							level++;
@@ -58,7 +58,7 @@ public class BattleAnalyzer {
 				case 2:
 					{
 						if (s.toString().contains("を応援中")){
-							String s2 = Core.sortString(s.toString(), "：", '%');
+							String s2 = StringScanner.sortString(s.toString(), "：", '%');
 							winPercent=s2;
 							s.setLength(0);
 							level++;
@@ -68,7 +68,7 @@ public class BattleAnalyzer {
 				case 3:
 					{
 						if (s.toString().contains("accentBtnS")){
-							String s2 = Core.sortString(s.toString(), "user_id=", '\"');
+							String s2 = StringScanner.sortString(s.toString(), "user_id=", '\"');
 							User u = new User(s2);
 							u.setDefense(defense);
 							u.setWinPercent(winPercent);
