@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import dao.EGHelperConsoleMain;
+import dao.EGHelperMain;
 
 import view.NewConfigDialog;
 import view.ProxyConfigDialog;
@@ -34,7 +35,7 @@ public class StartMenuListener implements ActionListener {
 
 	public void actionPerformed(ActionEvent ae) {
 		if (ae.getSource()==frame.getjButtonLoadCfg()){
-			if (EGHelperConsoleMain.loadConfig(carrier)){
+			if (EGHelperMain.loadConfig(carrier)){
 				frame.getjButtonSetProxy().setEnabled(true);
 			} else {
 				frame.getjButtonLoadCfg().setEnabled(false);
@@ -52,7 +53,7 @@ public class StartMenuListener implements ActionListener {
 			inst.setVisible(true);
 		}
 		if (ae.getSource()==frame.getjButtonConfig()){
-			EGHelperConsoleMain.showTactics(carrier);
+			EGHelperMain.showTactics(carrier);
 			frame.getjButtonStart().setEnabled(true);
 		}
 		if (ae.getSource()==frame.getjButtonStart()){

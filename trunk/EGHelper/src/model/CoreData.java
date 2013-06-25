@@ -8,17 +8,37 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import control.EGMessenger;
 
 public class CoreData {
-	protected final int randomLeast = 10;
-	protected final int randomOther = 10;
-	
+	/**
+	 * 登录后的连接客户端
+	 */
 	protected DefaultHttpClient hc;
+	/**
+	 * App基础信息的类
+	 */
 	protected App app;
+	/**
+	 * 随机数生成器
+	 */
 	protected Random radomer;
+	/**
+	 * 用户UID
+	 */
 	protected String UID;
+	/**
+	 * 信使类
+	 */
 	protected EGMessenger carrier = null;
-
+	/**
+	 * 服务器地址
+	 */
 	protected String host;
+	/**
+	 * 来源地址1
+	 */
 	protected String referrer = "http://"+host+"/";
+	/**
+	 * 来源地址2
+	 */
 	protected String referrer2;
 	
 	protected String fileMainPage = "nowMain.html";
@@ -36,8 +56,13 @@ public class CoreData {
 	protected String fileLostList = "LostList.inf";
 	protected String fileBonus = "Bonus.html";
 	protected String fileBonusResult = "BonusResult.json";
-	
+	/**
+	 * 是否显示分析信息
+	 */
 	protected boolean showAnalyze = true;
+	/**
+	 * 用于标记体力已够升级所需经验
+	 */
 	protected boolean isUpgrade = false;
 	
 	protected boolean useBPMode = false;
@@ -45,8 +70,12 @@ public class CoreData {
 		this.useBPMode = useBPMode;
 	}
 	
-	protected int fightMode = 0; //0 - 全部 1 - 自己 2 - 好友
+	protected int fightMode = 0; //0 - 全部 -1 - 自己优先  1 - 好友优先
 	public void setFightMode(int fightMode) {
+		if (fightMode<0)
+			fightMode = -1;
+		if (fightMode>0)
+			fightMode = 1;
 		this.fightMode = fightMode;
 	}
 
@@ -92,4 +121,12 @@ public class CoreData {
 	}
 	
 	protected int pvpNoFresh = 0;
+	/**
+	 * 两次刷新间隔的最短时长
+	 */
+	public int randomLeast = 60;
+	/**
+	 * 两次刷新间隔时长的随机参数1
+	 */
+	public int randomOther = 60;
 }

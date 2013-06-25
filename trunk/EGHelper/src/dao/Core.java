@@ -46,6 +46,10 @@ public class Core extends CoreData implements CoreThreadInterface {
 		UID = uID;
 		this.carrier = carrier;
 		carrier.setGame(this);
+		if (carrier.isDebugMode()){
+			this.randomLeast = 5;
+			this.randomOther = 5;
+		}
 	}
 	
 	private void setHeaders(HttpGet req) {
@@ -162,11 +166,11 @@ public class Core extends CoreData implements CoreThreadInterface {
 	private boolean getBonus(String s){
 		carrier.println("有未领取奖励，自动领取。。。");
 		String url = StringScanner.sortString(s, this.host, '\"');
-		if (this.loadPage(url, this.fileBonus))
+		if (!this.loadPage(url, this.fileBonus))
 			return false;
 		url = StringScanner.findString("ボーナスを受取る", this.fileBonus);
 		url = StringScanner.sortString(url, host, '\"');
-		if (this.loadPage(url, this.fileBonusResult))
+		if (!this.loadPage(url, this.fileBonusResult))
 			return false;
 		return true;
 	}
@@ -185,6 +189,9 @@ public class Core extends CoreData implements CoreThreadInterface {
 		String s;
 		s = StringScanner.findString("id=\"executeBtn\"",resultFile);
 		s = StringScanner.sortString(s, host, '\"');
+		if (s==null){
+			return false;
+		}
 		List<NameValuePair> formParams = new ArrayList<NameValuePair>();   
 		formParams.add(new BasicNameValuePair("healItem_2", "0"));   
 		formParams.add(new BasicNameValuePair("healItem_4", "0"));        
@@ -246,17 +253,17 @@ public class Core extends CoreData implements CoreThreadInterface {
 		for (int i=1;i<=missions.size();i++){
 			Mission m = missions.get(i);
 			String str = "好友 - ";
-			if (m.getUid().equals(UID)&&(this.fightMode==1||this.fightMode==0)){
+			if (m.getUid().equals(UID)){
 				str = "自己 - ";
 				if (m.getTitle().contains("緊急")){
-					if (bp>=PVEU)
+					if (bp>=PVEU+this.fightMode)
 						this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 紧急，自动战斗。");
 				} else if (m.getTitle().contains("特大")){
-					if (bp>=PVEL)
+					if (bp>=PVEL+this.fightMode)
 						this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 特大，自动战斗。");
-				} else if (bp>=PVEN)
+				} else if (bp>=PVEN+this.fightMode)
 					this.attendMission(m.getMid(), fileMissionPage, "发现"+str+m.getUser()+" 普通，自动战斗。");
-			} else if (m.getStatus().contains("未参加")&&(this.fightMode==2||this.fightMode==0)){
+			} else if (m.getStatus().contains("未参加")){
 				if (m.getHpNow()>=this.hpmin){
 					if (m.getTitle().contains("緊急")){
 						if (bp>=PVEU)
@@ -462,6 +469,11 @@ public class Core extends CoreData implements CoreThreadInterface {
 		s = s.replace("</span>", "");
 		s = s.replace("<span id=\"max_bp\">", "");
 		max_bp = Integer.parseInt(s);
+		
+		if (st>max_exp-exp)
+			this.isUpgrade = true;
+		else
+			this.isUpgrade = false;
 		return true;
 	}
 
@@ -542,6 +554,10 @@ public class Core extends CoreData implements CoreThreadInterface {
 	
 	private long getRandomTime(int i, int j){
 		int time = this.randomLeast;
+		if (j<=0){
+			carrier.println("为了获取随机数，WAIT的值必须为正数。");
+			j = 60;
+		}
 		time += radomer.nextInt(i)+radomer.nextInt(j);
 		return time;
 	}

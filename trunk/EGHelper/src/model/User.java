@@ -110,6 +110,6 @@ public class User {
 		if (this.defense!=null)
 			if (this.defense.length()>1)
 				return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n"+rank+" - "+point+"pt\nDefense:"+this.defense+"\nWin:"+this.winPercent+"%\n两倍: "+this.special+"\n";
-		return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n";
+		return "\n"+name+" Lv."+level+"\nFriend:"+friend+"\n"+rank+" - "+point+"pt\n";
 	}
 }

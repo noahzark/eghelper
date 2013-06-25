@@ -6,7 +6,6 @@ import view.InfoFrame;
 import view.StartMenuFrame;
 
 public class EGHelperGUIMain {
-	private boolean debug = true;
 	private boolean quiteMode = false;
 	
 	public EGHelperGUIMain(boolean b) {
@@ -15,7 +14,6 @@ public class EGHelperGUIMain {
 
 	public void run(){
 		final EGMessenger carrier = new EGMessenger(1000,1);
-		carrier.setDebugMode(debug);
 		carrier.setQuiteMode(quiteMode);
 		
 		SwingUtilities.invokeLater(new Runnable() {
