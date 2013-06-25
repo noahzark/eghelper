@@ -1,42 +1,19 @@
 package dao;
 
-import java.util.TreeMap;
-
 import model.App;
 import model.AppInfo;
-import model.Page;
 import control.EGMessenger;
 
 public class EGHelperConsoleMain extends Thread{
-	private boolean debug = true;
 	
 	EGMessenger carrier;
 	Thread t;
-	
-	public static boolean loadConfig(EGMessenger carrier) {
-		boolean flag = true;
-		flag &= ((carrier.infoMap = (new ConfigReader("EGHelper.inf", carrier)).load())!=null);
-		if (!flag){
-			carrier.println("应用配置文件读取失败，请重新建立。");
-			return false;
-		}
-		TreeMap<String, String> pages;
-		flag &= ((pages = (new PageReader("PageConfig.inf", carrier)).load())!=null);
-		if (flag){
-			carrier.pages = new Page(pages);
-		} else {
-			carrier.println("页面地址配置文件读取失败，请重新建立。");
-			return false;
-		}
-		return true;
-	}
 
 	public EGHelperConsoleMain(boolean b){
 		carrier = new EGMessenger(1000,1);
 		carrier.println(EGMessenger.title+" V"+EGMessenger.version);
-		carrier.setDebugMode(debug);
 		carrier.setQuiteMode(b);
-		if (!EGHelperConsoleMain.loadConfig(carrier))
+		if (!EGHelperMain.loadConfig(carrier))
 			return;
 	}
 	
@@ -44,7 +21,7 @@ public class EGHelperConsoleMain extends Thread{
 		carrier = carrier2;
 	}
 	
-	public void startPlay(){
+	public boolean startPlay(){
 		AppInfo appinfo = new AppInfo(
 				carrier.infoMap.get("sdk"),
 				carrier.infoMap.get("digest")
@@ -100,13 +77,18 @@ public class EGHelperConsoleMain extends Thread{
 			t.start();
 			carrier.setGameThread(t);
 		} else {
-			carrier.println("失败\n"+"请稍后重试或联系作者");
+			carrier.showError("连接失败");
 		}
+		return true;
 	}
 	
 	public void run(){
-		while (true){
-			startPlay();
+		if (carrier.checkMulti())
+			return;
+		carrier.listenPort();
+		boolean flag = true;
+		while (flag){
+			flag = startPlay();
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {}
@@ -117,37 +99,18 @@ public class EGHelperConsoleMain extends Thread{
 					Thread.sleep(60000);
 				} catch (InterruptedException e) {}
 			}
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {}
+			carrier.println("连接断开，等待10s后重试。。。");
 		}
 		
-	}
-	
-	public static void showTactics(EGMessenger carrier){
-		carrier.print(
-				"当前策略：\n"+
-				"1.剩余校园PVP免费BP时继续参战；\n" +
-				"2.剩余ST+EXP大于升级所需EXP时自动探索/战斗；\n" +
-				"3.保持ST在"+carrier.infoMap.get("ST_DOWN")+"与最大ST-" +
-				carrier.infoMap.get("ST_UP")+"间浮动；\n"+
-				"4.刷新间隔10+0~10+0~"+carrier.infoMap.get("WAIT")+"s；\n"+
-				"5.当BP大于等于"+carrier.infoMap.get("BP_COMBO")+"时继续参加PVP活动战斗；\n"+
-				"6.PVP战斗只攻击校园点数低于+"+carrier.infoMap.get("PVP_PT_MAX")+"的敌人；\n"+
-				"7.PVP活动只攻击防御点数低于+"+carrier.infoMap.get("PVP_DEFENSE_MAX")+"的敌人；\n"+
-				"8.当BP大于等于"+carrier.infoMap.get("PVE_NORMAL")+"时，参加好友/自己普通PVE战斗；\n"+
-				"9.当BP大于等于"+carrier.infoMap.get("PVE_LARGE")+"时，参加好友/自己特大PVE战斗；\n"+
-				"10.当BP大于等于"+carrier.infoMap.get("PVE_URGENT")+"时，参加好友/自己紧急PVE战斗；\n"+
-				"11.当BP大于等于4时，自动参加当前PVE任务列表第一的战斗；\n"+
-				"12."
-		);
-		if (carrier.infoMap.get("NORMALBATTLE").equals("0"))
-			carrier.println("不使用BP参加校园PVP。");
-		else
-			carrier.println("使用BP参加校园PVP。");
 	}
 	
 	public static void main(String[] args) {
 		EGHelperConsoleMain another = new EGHelperConsoleMain(false);
 		if (another.carrier.infoMap!=null){
-			EGHelperConsoleMain.showTactics(another.carrier);
+			EGHelperMain.showTactics(another.carrier);
 			another.start();
 		}
 	}

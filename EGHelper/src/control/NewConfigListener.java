@@ -54,9 +54,11 @@ public class NewConfigListener implements ActionListener {
 			bw.newLine();
 			bw.write("NORMALBATTLE = 0");
 			bw.newLine();
-			bw.write("PVP_PT_MAX = 150");
+			bw.write("PVP_PT_MAX = 1000");
 			bw.newLine();
 			bw.write("PVP_DEFENSE_MAX = 100000");
+			bw.newLine();
+			bw.write("PVE_PRIORITY = 0");
 			bw.newLine();
 			bw.write("PVE_NORMAL = 0");
 			bw.newLine();

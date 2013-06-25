@@ -1,5 +1,9 @@
 package control;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.TreeMap;
 import model.Page;
@@ -10,9 +14,33 @@ import view.InfoFrame;
 
 public class EGMessenger {
 	public static String title = "EG助手";
-	public static String version = "4.0";
+	public static String version = "4.1";
 	
 	public TreeMap<String, String> infoMap = null;
+	
+	public boolean checkMulti(){
+		this.println("初始化中。。。");
+		try {
+			@SuppressWarnings("unused")
+			Socket socket;
+			socket = new Socket("127.0.0.1",9126);
+		} catch (UnknownHostException e) {
+			return false;
+		} catch (IOException e) {
+			return false;
+		}
+		this.println("为了您的账号安全，请使用默认的启动器打开程序。");
+		return true;
+	}
+	
+	public void listenPort(){
+		try {
+			@SuppressWarnings("unused")
+			ServerSocket serversocket=new ServerSocket(9126);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	private boolean useProxy = false;
 	public boolean isUseProxy() {
@@ -22,7 +50,7 @@ public class EGMessenger {
 		this.useProxy = useProxy;
 	}
 
-	private boolean debugMode = true;
+	private boolean debugMode = false;
 	public boolean isDebugMode() {
 		return debugMode;
 	}
@@ -136,7 +164,7 @@ public class EGMessenger {
 	}
 	
 	public void showError(String errorCause){
-		println("错误: "+errorCause+"，请联系原作者或前往http://eghelper.sts-ol.com升级到最新版本。");
+		println("错误: "+errorCause+"，请稍后重试或联系原作者。");
 	}
 	
 	public void showError(Exception e){
