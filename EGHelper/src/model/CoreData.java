@@ -56,6 +56,7 @@ public class CoreData {
 	protected String fileLostList = "LostList.inf";
 	protected String fileBonus = "Bonus.html";
 	protected String fileBonusResult = "BonusResult.json";
+	protected String fileRankPage = "ranking.json";
 	/**
 	 * 是否显示分析信息
 	 */
@@ -86,6 +87,9 @@ public class CoreData {
 	
 	public TreeMap<Integer, Mission> missions = null;
 	public TreeMap<Integer, User> users = null;
+	public TreeMap<Integer, Integer> ranks = new TreeMap<Integer, Integer>();
+	protected int[][] rankLevel = {{1,4,8,18,25,38},{20,75,150,350,500,750}};
+	
 	public void setSt_up(int st_up) {
 		this.st_up = st_up;
 	}

@@ -14,11 +14,14 @@ import view.InfoFrame;
 
 public class EGMessenger {
 	public static String title = "EG助手";
-	public static String version = "4.1";
+	public static String version = "4.2";
+	private boolean debugMode = false;
 	
 	public TreeMap<String, String> infoMap = null;
 	
 	public boolean checkMulti(){
+		if (this.isDebugMode())
+			return false;
 		this.println("初始化中。。。");
 		try {
 			@SuppressWarnings("unused")
@@ -50,7 +53,6 @@ public class EGMessenger {
 		this.useProxy = useProxy;
 	}
 
-	private boolean debugMode = false;
 	public boolean isDebugMode() {
 		return debugMode;
 	}
@@ -145,6 +147,14 @@ public class EGMessenger {
 				game.t2
 		};
 		return array;
+	}
+	
+	public void showRankInfo(TreeMap<String, String> tempMap) {
+		if (this.isQuiteMode())
+			return;
+		if (isModeGUI()){
+			inst.getjTextAreaRankInfo().setText(tempMap.toString());
+		}
 	}
 	
 	public void showUserList() {
