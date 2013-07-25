@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 
 import model.App;
@@ -212,6 +213,9 @@ public class Core extends CoreData implements CoreThreadInterface {
 			return false;
 		}
 		
+		if (this.getRankInfo(carrier.pages.QUEST))
+			carrier.showError("无法解析排名信息。");
+		
 		loadPage(missionUrl,filemissionSet);
 		String s = StringScanner.findString("こちら", this.filemissionSet);
 		if (s!=null)
@@ -283,6 +287,33 @@ public class Core extends CoreData implements CoreThreadInterface {
 		return true;
 	}
 	
+	private boolean getRankInfo(String missionUrl) {
+		if (!missionUrl.contains("show"))
+			return true;
+		String rankUrl = missionUrl.replace("show", "ranking");
+		
+		TreeMap<Integer, Integer> ranktemp = new TreeMap<Integer, Integer>();
+		RankInfoAnalyzer rankAnalyzer = new RankInfoAnalyzer(this.fileRankPage);		
+		for (int i=0;i<this.rankLevel[0].length;i++){
+			loadPage(rankUrl+".json?list_type_id=0&page="+this.rankLevel[0][i], this.fileRankPage);
+			String s = rankAnalyzer.analyze(rankLevel[1][i]);
+			ranktemp.put(rankLevel[1][i], Integer.parseInt(s));
+		}
+		
+		if (ranks.size()==0)
+			ranks = ranktemp;
+		
+		TreeMap<String, String> tempMap = new TreeMap<String, String>();
+		for (Integer key : this.rankLevel[1]){
+			int now = ranktemp.get(key);
+			int before = this.ranks.get(key);
+			tempMap.put("第"+((key<100)?"0"+key:key)+"位", now+"pt"+" + "+(now-before)+"\n");
+		}
+		carrier.showRankInfo(tempMap);
+		this.ranks = ranktemp;
+		return false;
+	}
+
 	private boolean attendQuest(String key,String fileName,String hint) throws IOException{
 		carrier.println(new Date() + ": " + hint);
 		String url,authenticity_token,app_token;
@@ -334,6 +365,7 @@ public class Core extends CoreData implements CoreThreadInterface {
 			carrier.println("卡片数达到上限，无法继续作战，请先到新闻部整理卡牌。");
 			return null;
 		}
+		
 		String s = StringScanner.findString(key, fileBattlePage);
 		url = StringScanner.sortString(s,host,'"');
 		List<NameValuePair> formParams = new ArrayList<NameValuePair>();   
@@ -401,8 +433,8 @@ public class Core extends CoreData implements CoreThreadInterface {
 			}
 			this.pvpNoFresh++;
 		} else {
-			if (this.pvpNoFresh>10)
-				carrier.println("PVP对战列表活动解析模式超过20次未成功，自动改为普通解析模式。");
+			if (this.pvpNoFresh>5)
+				carrier.println("PVP对战列表活动解析模式超过5次未成功，自动改为普通解析模式。");
 			int ptmin = pt_min;
 			for (int i=1;i<=users.size();i++){
 				now = users.get(i);
@@ -421,7 +453,6 @@ public class Core extends CoreData implements CoreThreadInterface {
 			if (now.getWinPercent().length()>=1)
 				carrier.print("防御点数为"+now.getDefense()+"，");
 			carrier.println("对战点数为:"+now.getPoint()+"的对手，进入战斗！");
-			
 			try {
 				Boolean result = attendBattle(attendUrl+now.getUid(),"executeBtn");
 				
@@ -686,7 +717,8 @@ public class Core extends CoreData implements CoreThreadInterface {
 				long t = getRandomTime(this.randomOther, this.waitTime);
 				carrier.println("等待: "+t+"s");
 				this.clearFiles(".");
-				carrier.setFight(true);
+				if (carrier.isDebugMode())
+					carrier.setFight(true);
 				try{
 					Thread.sleep((long)t*1000L);
 				} catch(InterruptedException e){

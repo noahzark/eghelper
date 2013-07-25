@@ -6,6 +6,7 @@ import javax.swing.JLabel;
 
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 
 import control.EGMessenger;
@@ -35,6 +36,8 @@ public class InfoFrame extends javax.swing.JFrame {
 	private JProgressBar jProgressBarST;
 	private JLabel jLabelST;
 	private TextArea TextAreaList;
+	private TextArea jTextAreaRankInfo;
+	private JPanel ListPanel;
 	private JProgressBar jProgressBarEXP;
 	private JLabel jLabelEXP;
 	private JButton jButtonManual;
@@ -96,13 +99,6 @@ public class InfoFrame extends javax.swing.JFrame {
 				}
 			}
 			{
-				TextAreaList = new TextArea();
-				getContentPane().add(getTextAreaList(), BorderLayout.EAST);
-				TextAreaList.setText("ListsHere");
-				TextAreaList.setPreferredSize(new java.awt.Dimension(200, 287));
-				TextAreaList.setEditable(false);
-			}
-			{
 				jPanelBars = new JPanel();
 				getContentPane().add(jPanelBars, BorderLayout.NORTH);
 				jPanelBars.setPreferredSize(new java.awt.Dimension(624, 28));
@@ -138,6 +134,27 @@ public class InfoFrame extends javax.swing.JFrame {
 					jPanelBars.add(getJProgressBarEXP());
 					jProgressBarEXP.setPreferredSize(new java.awt.Dimension(120, 18));
 					jProgressBarEXP.setIndeterminate(true);
+				}
+			}
+			{
+				ListPanel = new JPanel();
+				BorderLayout jPanel1Layout = new BorderLayout();
+				getContentPane().add(ListPanel, BorderLayout.EAST);
+				ListPanel.setLayout(jPanel1Layout);
+				ListPanel.setPreferredSize(new java.awt.Dimension(200, 309));
+				{
+					TextAreaList = new TextArea();
+					ListPanel.add(TextAreaList);
+					TextAreaList.setText("ListsHere");
+					TextAreaList.setPreferredSize(new java.awt.Dimension(200, 100));
+					TextAreaList.setEditable(false);
+				}
+				{
+					jTextAreaRankInfo = new TextArea();
+					ListPanel.add(jTextAreaRankInfo, BorderLayout.SOUTH);
+					jTextAreaRankInfo.setText("RankInfoHere");
+					jTextAreaRankInfo.setPreferredSize(new java.awt.Dimension(200, 115));
+					jTextAreaRankInfo.setEditable(false);
 				}
 			}
 			pack();
@@ -180,5 +197,10 @@ public class InfoFrame extends javax.swing.JFrame {
 	public JProgressBar getJProgressBarEXP() {
 		return jProgressBarEXP;
 	}
+
+	public TextArea getjTextAreaRankInfo() {
+		return jTextAreaRankInfo;
+	}
+	
 
 }
