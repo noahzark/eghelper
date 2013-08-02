@@ -50,6 +50,10 @@ public class EGHelperMain {
 	}
 
 	public static void main(String[] args) {
+		System.out.println("Arguments:");
+		for (String s : args){
+			System.out.println(s);
+		}
 		switch(args.length){
 			case 0:{
 				EGHelperGUIMain another = new EGHelperGUIMain(false);
@@ -72,6 +76,19 @@ public class EGHelperMain {
 				}
 			}
 				break;
+			case 2:{
+				if (args[1].equals("true")){
+					EGHelperGUIMain another = new EGHelperGUIMain(true);
+					another.run();
+				} else {
+					int port = Integer.parseInt(args[1]);
+					EGHelperConsoleMain another = new EGHelperConsoleMain(false);
+					another.carrier.infoMap.put("proxy", "127.0.0.1");
+					another.carrier.infoMap.put("port", ""+port);
+					if (another.carrier.infoMap!=null)
+						another.start();
+				}
+			}
 			default:{
 				EGHelperConsoleMain another = new EGHelperConsoleMain(true);
 				if (another.carrier.infoMap!=null)

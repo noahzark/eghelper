@@ -66,6 +66,8 @@ public class NewConfigListener implements ActionListener {
 			bw.newLine();
 			bw.write("PVE_URGENT = 0");
 			bw.newLine();
+			bw.write("SHOWRANK = 1");
+			bw.newLine();
 			bw.close();
 			carrier.println("完成");
 		} catch (IOException e) {

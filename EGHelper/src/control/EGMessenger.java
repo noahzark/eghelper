@@ -11,11 +11,14 @@ import model.Page;
 import dao.Core;
 
 import view.InfoFrame;
+import view.MyChartFrame;
 
 public class EGMessenger {
 	public static String title = "EG助手";
-	public static String version = "4.2";
-	private boolean debugMode = false;
+	public static String version = "4.3 - 开发版";
+	
+	private boolean debugMode = true;
+	private boolean rankOnlyMode = false;
 	
 	public TreeMap<String, String> infoMap = null;
 	
@@ -37,6 +40,8 @@ public class EGMessenger {
 	}
 	
 	public void listenPort(){
+		if (this.debugMode)
+			return;
 		try {
 			@SuppressWarnings("unused")
 			ServerSocket serversocket=new ServerSocket(9126);
@@ -83,13 +88,15 @@ public class EGMessenger {
 		this.game = game;
 	}
 	
-	private Thread gameThread;
-
 	public Page pages = null;
 	
+	private Thread gameThread;
 	public void setGameThread(Thread gameThread) {
 		this.gameThread = gameThread;
 	}
+	
+	private Thread monitor;
+	private MyChartFrame cf;
 
 	public EGMessenger(int i,int mode) {
 		countLines = 0;
@@ -157,6 +164,13 @@ public class EGMessenger {
 		}
 	}
 	
+	public Integer getRankInfo(int i) {
+		Integer rank = this.game.ranks.get(i);
+		if (rank == null)
+			return 0;
+		return rank;
+	}
+
 	public void showUserList() {
 		if (this.isQuiteMode())
 			return;
@@ -213,5 +227,25 @@ public class EGMessenger {
 		inst.getJProgressBarST().setStringPainted(true);
 		inst.getJProgressBarBP().setStringPainted(true);
 		inst.getJProgressBarEXP().setStringPainted(true);
+	}
+
+	public boolean isRankOnlyMode() {
+		return rankOnlyMode;
+	}
+
+	public void setRankOnlyMode(boolean rankOnlyMode) {
+		this.rankOnlyMode = rankOnlyMode;
+	}
+
+	public void newChartFrame(int[] levels) {
+		cf = new MyChartFrame(this,levels);
+	}
+	
+	public void setMonitor(Thread monitor) {
+		this.monitor = monitor;
+	}
+
+	public void disposeMonitor() {
+		cf.dispose();
 	}
 }

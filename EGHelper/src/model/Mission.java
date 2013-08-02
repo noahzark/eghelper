@@ -39,6 +39,8 @@ public class Mission implements Comparable<Mission>{
 	
 	public int getHpNow() {
 		StringBuffer sb = new StringBuffer();
+		if (this.hp[0]==null)
+			return 0;
 		for (int i=0;i<this.hp[0].length();i++){
 			char c = this.hp[0].charAt(i);
 			if (c>='0'&&c<='9')

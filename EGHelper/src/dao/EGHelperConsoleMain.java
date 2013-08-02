@@ -69,6 +69,7 @@ public class EGHelperConsoleMain extends Thread{
 			peg.setDefenseMax(Long.parseLong(carrier.infoMap.get("PVP_DEFENSE_MAX")));
 			peg.setBp_combo(Integer.parseInt(carrier.infoMap.get("BP_COMBO")));
 			peg.setUseBPMode(carrier.infoMap.get("NORMALBATTLE").equals("1"));
+			peg.showRank = (carrier.infoMap.get("SHOWRANK").equals("1"));
 			
 			try {
 				Thread.sleep(1000);

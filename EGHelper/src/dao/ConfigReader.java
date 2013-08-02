@@ -37,7 +37,8 @@ public class ConfigReader {
 				"PVE_PRIORITY",
 				"PVE_NORMAL",
 				"PVE_LARGE",
-				"PVE_URGENT"
+				"PVE_URGENT",
+				"SHOWRANK"
 		};
 		if (infoMap.size()!=s.length)
 			return false;
