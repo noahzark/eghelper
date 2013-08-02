@@ -6,7 +6,6 @@ import javax.swing.JLabel;
 
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 
 import control.EGMessenger;

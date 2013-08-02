@@ -88,6 +88,7 @@ public class CoreData {
 	public TreeMap<Integer, Mission> missions = null;
 	public TreeMap<Integer, User> users = null;
 	public TreeMap<Integer, Integer> ranks = new TreeMap<Integer, Integer>();
+	//protected int[][] rankLevel = {{4,8,18,25,38},{75,150,350,500,750}};
 	protected int[][] rankLevel = {{1,4,8,18,25,38},{20,75,150,350,500,750}};
 	
 	public void setSt_up(int st_up) {
@@ -124,6 +125,11 @@ public class CoreData {
 		this.defenseMax = defenseMax;
 	}
 	
+	public boolean showRank = true;
+	public boolean isShowRank() {
+		return showRank;
+	}
+
 	protected int pvpNoFresh = 0;
 	/**
 	 * 两次刷新间隔的最短时长

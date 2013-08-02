@@ -204,17 +204,16 @@ public class Core extends CoreData implements CoreThreadInterface {
 			e.printStackTrace();
 			return false;
 		}
+		this.bp--;
 		return true;
 	}
 
 	private boolean playMission(String missionUrl){
 		if (missionUrl==null){
-			carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
 			return false;
 		}
 		
-		if (this.getRankInfo(carrier.pages.QUEST))
-			carrier.showError("无法解析排名信息。");
+		refreshRankInfo();
 		
 		loadPage(missionUrl,filemissionSet);
 		String s = StringScanner.findString("こちら", this.filemissionSet);
@@ -289,13 +288,18 @@ public class Core extends CoreData implements CoreThreadInterface {
 	
 	private boolean getRankInfo(String missionUrl) {
 		if (!missionUrl.contains("show"))
-			return true;
+			return false;
 		String rankUrl = missionUrl.replace("show", "ranking");
 		
 		TreeMap<Integer, Integer> ranktemp = new TreeMap<Integer, Integer>();
 		RankInfoAnalyzer rankAnalyzer = new RankInfoAnalyzer(this.fileRankPage);		
 		for (int i=0;i<this.rankLevel[0].length;i++){
 			loadPage(rankUrl+".json?list_type_id=0&page="+this.rankLevel[0][i], this.fileRankPage);
+			if (StringScanner.findString("404.html", this.fileRankPage) != null){
+				this.showRank = false;
+				return false;
+			}
+
 			String s = rankAnalyzer.analyze(rankLevel[1][i]);
 			ranktemp.put(rankLevel[1][i], Integer.parseInt(s));
 		}
@@ -311,6 +315,17 @@ public class Core extends CoreData implements CoreThreadInterface {
 		}
 		carrier.showRankInfo(tempMap);
 		this.ranks = ranktemp;
+		return true;
+	}
+	
+	private boolean refreshRankInfo(){
+		if (this.isShowRank())
+			if (this.getRankInfo(carrier.pages.QUEST)){
+				return true;
+			} else {
+				carrier.showError("无法解析排名信息");
+				carrier.disposeMonitor();
+			}
 		return false;
 	}
 
@@ -393,7 +408,6 @@ public class Core extends CoreData implements CoreThreadInterface {
 	private boolean playBattle(String battleUrl, String attendUrl){
 		this.loadPage(battleUrl, fileBattleList);
 		if (StringScanner.findString("ご利用いただけません", fileBattleList)!=null){
-			carrier.println("PVP校园战暂时不开放，稍后重试。");
 			freebp = 0;
 			return false;
 		} else {
@@ -505,6 +519,9 @@ public class Core extends CoreData implements CoreThreadInterface {
 			this.isUpgrade = true;
 		else
 			this.isUpgrade = false;
+		
+		if (carrier.isModeGUI())
+			carrier.refreshBar();
 		return true;
 	}
 
@@ -629,6 +646,20 @@ public class Core extends CoreData implements CoreThreadInterface {
 	}
 	
 	public void run() {
+		if (carrier.isDebugMode()){
+			if (this.UID.toUpperCase().equals(
+					"A1AFFD1B-4DED-4650-8C11-BAD35B8A43FF".toUpperCase())
+			){
+				this.randomLeast = 10;
+				this.randomOther = 10;
+			} else {
+				carrier.showError("该版本为开发版，请勿使用");
+				return;
+			}
+		} else {
+			this.randomLeast = 60;
+		}
+			
 		boolean exitflag = true;
 		boolean comboFightMode = false;
 		boolean isBattleActivity = true;
@@ -645,53 +676,84 @@ public class Core extends CoreData implements CoreThreadInterface {
 			return;
 		}
 		carrier.println("解析完毕");
+		if (carrier.isRankOnlyMode())
+			carrier.println("当前为只解析排名信息模式。");
+		if (this.isShowRank()&&carrier.isModeGUI()){
+			carrier.newChartFrame(this.rankLevel[1]);
+		}
 		carrier.println("Start: "+new Date());
-					
+		
+		//主处理循环
 		while(exitflag){
+			//刷新状态信息
 			if (!analyzeStatus(true,carrier.pages.QUEST))
 				continue;
 			
-			if (isBattleActivity){
-				loadPage(carrier.pages.EVENT_BATTLE,this.fileBattleList);
-				isBattleActivity = this.checkActivity(this.fileBattleList);
+			if (carrier.isRankOnlyMode())
+			//仅解析排名信息模式
+			{	
+				this.refreshRankInfo();
+			} else
+			//正常业务处理模式
+			{
+				//尝试解析PVP活动信息
 				if (isBattleActivity){
-					String s;
-					s = StringScanner.findString("3倍", this.fileBattleList);
-					if (s!=null)
-						carrier.println("踩中三倍！剩余："+StringScanner.sortString(s, "\">", '<')+"秒。");
-					s = StringScanner.findString("バトルガチャチケット", this.fileBattleList);
-					if (s!=null){
-						carrier.println("连胜中，剩余："+StringScanner.sortString(s, "class=\"colorR\">", '<'));
-						comboFightMode = true;
+					loadPage(carrier.pages.EVENT_BATTLE,this.fileBattleList);
+					isBattleActivity = this.checkActivity(this.fileBattleList);
+					if (isBattleActivity){
+						if (bp>=this.bp_combo)
+							comboFightMode = true;
+						if (bp==0)
+							comboFightMode = false;
+						
+						String s;
+						s = StringScanner.findString("3倍", this.fileBattleList);
+						if (s!=null)
+							carrier.println("踩中三倍！剩余："+StringScanner.sortString(s, "\">", '<')+"秒。");
+						s = StringScanner.findString("バトルガチャチケット", this.fileBattleList);
+						if (s!=null){
+							carrier.println("连胜中，剩余："+StringScanner.sortString(s, "class=\"colorR\">", '<'));
+							comboFightMode = true;
+						}
+						if (comboFightMode)
+							playBattle(carrier.pages.EVENT_BATTLE,carrier.pages.EVENT_BATTLE+carrier.pages.SHOW_USER);
+						isMissionActivity = false;
+					} else {
+						carrier.println("PVP活动暂时不开放，已关闭自动参加PVP活动战斗功能。");
 					}
-					if (comboFightMode)
-						playBattle(carrier.pages.EVENT_BATTLE,carrier.pages.EVENT_BATTLE+carrier.pages.SHOW_USER);
-					isMissionActivity = false;
-				} else {
-					carrier.println("PVP活动暂时不开放，已关闭自动参加PVP活动战斗功能。");
 				}
+				
+				//尝试解析PVE活动信息
+				if (isMissionActivity){
+					isMissionActivity = this.playMission(carrier.pages.MISSION);
+				} else {
+					carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
+				}
+				
+				//尝试解析校园PVP战斗
+				if (freebp>0||this.useBPMode)
+					if (!playBattle(
+						carrier.pages.BATTLE,
+						carrier.pages.BATTLE+carrier.pages.SHOW_USER
+					))
+						carrier.println("PVP校园战暂时不开放，稍后重试。");;
+				
+				//尝试自动探索
+				exitflag &= this.playQuest(carrier.pages.QUEST);
 			}
 			
-			if (isMissionActivity){
-				isMissionActivity = this.playMission(carrier.pages.MISSION);
-			}
-			
-			if (freebp>0||this.useBPMode)
-				playBattle(carrier.pages.BATTLE, carrier.pages.BATTLE+carrier.pages.SHOW_USER);
-			
-			exitflag &= this.playQuest(carrier.pages.QUEST);
-			
+			//如果信息更新则刷新状态信息
 			if (!analyzeStatus(false,carrier.pages.QUEST))
 				continue;
 			
+			//解析升级信息
 			exitflag &= analyzeTime(
 					carrier.pages.MYPAGE,
 					carrier.pages.USER_DETAIL,
 					this.UID
 			);
 			
-			if (carrier.isModeGUI())
-				carrier.refreshBar();
+			//输出状态信息
 			if (this.showAnalyze){
 				if (!carrier.isModeGUI())
 					carrier.println("ST: "+st+" / "+max_st+"\tBP: "+bp+" / "+max_bp+"\tEP: "+exp+" / "+max_exp);
@@ -706,15 +768,13 @@ public class Core extends CoreData implements CoreThreadInterface {
 				carrier.println("STTime:"+t1+"\tBPTime:"+t2+"\tUpgrade:"+t3);
 			}
 			
-			if (isBattleActivity){
-				if (bp>=this.bp_combo)
-					comboFightMode = true;
-				if (bp==0)
-					comboFightMode = false;
-			}
-			
+			//计算刷新间隔
 			{
-				long t = getRandomTime(this.randomOther, this.waitTime);
+				long t = 0;
+				t = (carrier.isRankOnlyMode())
+						? 5 + radomer.nextInt(5)
+						: getRandomTime(this.randomOther, this.waitTime);
+					
 				carrier.println("等待: "+t+"s");
 				this.clearFiles(".");
 				if (carrier.isDebugMode())

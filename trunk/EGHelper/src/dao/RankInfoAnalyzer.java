@@ -31,6 +31,8 @@ public class RankInfoAnalyzer {
 		while ((temp = fis.read())!=-1){
 			if ((char)temp==c)
 				return sb.toString();
+			if ((char)temp==',')
+				continue;
 			sb.append((char)temp);
 			if (sb.toString().endsWith("\\"+"u")){
 				sb.setLength(sb.length()-2);
