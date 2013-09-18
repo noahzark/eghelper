@@ -1,6 +1,17 @@
 package dao;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Scanner;
 import java.util.TreeMap;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 
 import model.Page;
 import control.EGHelperGUIMain;
@@ -48,9 +59,58 @@ public class EGHelperMain {
 		}
 		return true;
 	}
+	
+	public static boolean checkVersion(){
+		DefaultHttpClient hc = new DefaultHttpClient();
+		HttpHost target = new HttpHost("eghelper.googlecode.com", 80, "http");
+		HttpGet req = new HttpGet("/svn/trunk/EGHelper/EGINFO.dat");
+		try {
+			HttpResponse rsp = hc.execute(target, req);
+			int status = rsp.getStatusLine().getStatusCode();
+			HttpEntity entity = rsp.getEntity();
+			if (status != 200) {
+				System.out.println("Status:"+status);
+				EntityUtils.consume(entity);
+				return false;
+            }
+			if (entity != null) {
+				InputStream instreams = entity.getContent();
+				Scanner sc = new Scanner(instreams);
+				TreeMap<String, String> map = new TreeMap<String, String>();
+				while(sc.hasNext()){
+					sc.next();
+					String p,p2,t;
+					while(sc.hasNext()){
+						p = sc.next();
+						t = sc.next();
+						if (!t.equals("="))
+							return false;
+						p2 = sc.next();
+						map.put(p, p2);
+					}
+				}
+				if (Integer.parseInt(map.get("reversion"))>EGMessenger.versionNumber) {
+					System.out.println("EG助手已有新版本，请前往 "+map.get("download")+" 进行更新。");
+					System.out.println("We've updated the EGHelper, please go to "+map.get("download")+" to download.");
+					return true;
+				}
+			}
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
+	}
 
 	public static void main(String[] args) {
 		System.out.println("Arguments:");
+		if (EGHelperMain.checkVersion()){
+			return;
+		}
+			
 		for (String s : args){
 			System.out.println(s);
 		}

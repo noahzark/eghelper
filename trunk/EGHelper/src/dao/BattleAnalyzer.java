@@ -86,6 +86,7 @@ public class BattleAnalyzer {
 					}
 				}
 			}
+			br.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return null;

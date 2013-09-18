@@ -15,8 +15,10 @@ import view.MyChartFrame;
 
 public class EGMessenger {
 	public static String title = "EG助手";
-	public static String version = "4.3 - 开发版";
+	public static String version = "5.0";
+	public static int versionNumber = 14;
 	
+	private boolean betaMode = false;
 	private boolean debugMode = true;
 	private boolean rankOnlyMode = false;
 	
@@ -27,9 +29,9 @@ public class EGMessenger {
 			return false;
 		this.println("初始化中。。。");
 		try {
-			@SuppressWarnings("unused")
 			Socket socket;
 			socket = new Socket("127.0.0.1",9126);
+			socket.close();
 		} catch (UnknownHostException e) {
 			return false;
 		} catch (IOException e) {
@@ -43,8 +45,8 @@ public class EGMessenger {
 		if (this.debugMode)
 			return;
 		try {
-			@SuppressWarnings("unused")
 			ServerSocket serversocket=new ServerSocket(9126);
+			serversocket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -233,6 +235,10 @@ public class EGMessenger {
 		return rankOnlyMode;
 	}
 
+	public boolean isBetaMode() {
+		return betaMode;
+	}
+
 	public void setRankOnlyMode(boolean rankOnlyMode) {
 		this.rankOnlyMode = rankOnlyMode;
 	}
@@ -247,5 +253,9 @@ public class EGMessenger {
 
 	public void disposeMonitor() {
 		cf.dispose();
+	}
+	
+	public void interruptMonitor() {
+		this.monitor.interrupt();
 	}
 }

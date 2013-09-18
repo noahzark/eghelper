@@ -61,7 +61,7 @@ public class EGConnection {
 	private void FirstCheck(String addr) throws ParseException, IOException {
 		hc.getParams().setParameter(CoreProtocolPNames.USER_AGENT, this.userAgent);
 		HttpHost target = new HttpHost(this.server1, 80, "http");
-		HttpGet req = new HttpGet(addr+"?app="+this.app.version+"&sdk="+this.appinfo.sdk+"&digest="+this.appinfo.digest);
+		HttpGet req = new HttpGet(addr+"?app="+this.appinfo.version+"&sdk="+this.appinfo.sdk+"&digest="+this.appinfo.digest);
 		carrier.println("Executing request to " + target);
         HttpResponse rsp = hc.execute(target, req);
         HttpEntity entity = rsp.getEntity();
@@ -76,12 +76,10 @@ public class EGConnection {
 		HttpHost target = new HttpHost(this.server2, 80, "http");
 		HttpPost req = new HttpPost(addr);
 		
-		req.setHeader("App-Id-2", this.app.id2);
-		req.setHeader("Accept-Encoding", "gzip, deflate");
-		req.setHeader("App-Id-3", this.app.id3);
-		req.setHeader("Accept","*/*");
-		req.setHeader("Content-Type", "application/x-www-form-urlencoded");
 		req.setHeader("App-Id-1", this.app.id1);
+		req.setHeader("App-Id-2", this.app.id2);
+		req.setHeader("App-Id-3", this.app.id3);
+		
 		carrier.println("Executing request to " + target);
         HttpResponse rsp = hc.execute(target, req);
         HttpEntity entity = rsp.getEntity();
