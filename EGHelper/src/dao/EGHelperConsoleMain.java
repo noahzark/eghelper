@@ -22,15 +22,11 @@ public class EGHelperConsoleMain extends Thread{
 	}
 	
 	public boolean startPlay(){
-		AppInfo appinfo = new AppInfo(
-				carrier.infoMap.get("sdk"),
-				carrier.infoMap.get("digest")
-		);
+		AppInfo appinfo = new AppInfo();
 		App app = new App(
 				carrier.infoMap.get("App-Id-1"),
 				carrier.infoMap.get("App-Id-2"),
-				carrier.infoMap.get("App-Id-3"),
-				carrier.infoMap.get("app")
+				carrier.infoMap.get("App-Id-3")
 		);
 		carrier.println("Connecting......");
 		

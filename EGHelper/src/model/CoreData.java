@@ -125,7 +125,7 @@ public class CoreData {
 		this.defenseMax = defenseMax;
 	}
 	
-	public boolean showRank = true;
+	public boolean showRank = false;
 	public boolean isShowRank() {
 		return showRank;
 	}

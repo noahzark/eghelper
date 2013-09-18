@@ -26,12 +26,6 @@ public class NewConfigListener implements ActionListener {
 			BufferedWriter bw = new BufferedWriter(fw);
 			bw.write("[AppInfo]");
 			bw.newLine();
-			bw.write("app = "+ncd.getjTextFieldApp().getText());
-			bw.newLine();
-			bw.write("sdk = "+ncd.getjTextFieldSDK().getText());
-			bw.newLine();
-			bw.write("digest = "+ncd.getjTextFieldDigest().getText());
-			bw.newLine();
 			bw.write("App-Id-1 = "+ncd.getjTextFieldAID1().getText());
 			bw.newLine();
 			bw.write("App-Id-2 = "+ncd.getjTextFieldAID2().getText());
@@ -42,11 +36,11 @@ public class NewConfigListener implements ActionListener {
 			bw.newLine();
 			bw.write("[Config]");
 			bw.newLine();
-			bw.write("MAXLINES = 1000");
+			bw.write("MAXLINES = "+ncd.getJTextFieldMaxLine().getText());
 			bw.newLine();
-			bw.write("ST_UP = 20");
+			bw.write("ST_UP = "+ncd.getJTextFieldSTUp().getText());
 			bw.newLine();
-			bw.write("ST_DOWN = 20");
+			bw.write("ST_DOWN = "+ncd.getJTextFieldSTDown().getText());
 			bw.newLine();
 			bw.write("BP_COMBO = 5");
 			bw.newLine();
@@ -66,7 +60,7 @@ public class NewConfigListener implements ActionListener {
 			bw.newLine();
 			bw.write("PVE_URGENT = 0");
 			bw.newLine();
-			bw.write("SHOWRANK = 1");
+			bw.write("SHOWRANK = "+((ncd.getJCheckBoxShowRank().isSelected())?"1":"0"));
 			bw.newLine();
 			bw.close();
 			carrier.println("完成");

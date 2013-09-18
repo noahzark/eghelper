@@ -5,6 +5,7 @@ import java.awt.FlowLayout;
 import java.awt.Toolkit;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -32,37 +33,28 @@ public class NewConfigDialog extends javax.swing.JDialog {
 	 */
 	private static final long serialVersionUID = -4931944315952342100L;
 	private JPanel jPanelContaint;
-	private JTextField jTextFieldApp;
-	private JTextField jTextFieldDigest;
 	private JTextField jTextFieldUID;
 	private JLabel jLabelUID;
 	private JTextField jTextFieldAID3;
+	private JLabel jLabelMaxLine;
+	private JLabel jLabelAdvanceInfo;
+	private JLabel jLabelBasicInfo;
+	private JTextField jTextFieldSTUp;
+	private JLabel jLabelST2;
+	private JTextField jTextFieldSTDown;
+	private JLabel jLabelST1;
+	private JTextField jTextFieldMaxLine;
+	private JCheckBox jCheckBoxShowRank;
 	private JTextField jTextFieldAID2;
 	private JLabel jLabelAID3;
 	private JLabel jLabelAID2;
 	private JTextField jTextFieldAID1;
 	private JLabel jLabelAID1;
-	private JLabel jLabelDigest;
-	private JTextField jTextFieldSDK;
-	private JLabel jLabelSDK;
-	private JLabel jLabelApp;
 	private JButton jButtonCancel;
 	private JButton jButtonConfirm;
 	private JPanel jPanelButtons;
 	private NewConfigListener ncl;
 	public StartMenuFrame frame;
-
-	public JTextField getjTextFieldApp() {
-		return jTextFieldApp;
-	}
-
-	public JTextField getjTextFieldSDK() {
-		return jTextFieldSDK;
-	}
-
-	public JTextField getjTextFieldDigest() {
-		return jTextFieldDigest;
-	}
 
 	public JTextField getjTextFieldUID() {
 		return jTextFieldUID;
@@ -117,37 +109,9 @@ public class NewConfigDialog extends javax.swing.JDialog {
 				jPanelContaint.setLayout(jPanelContaintLayout);
 				jPanelContaint.setPreferredSize(new java.awt.Dimension(344, 226));
 				{
-					jLabelApp = new JLabel();
-					jPanelContaint.add(jLabelApp);
-					jLabelApp.setText("APP: ");
-				}
-				{
-					jTextFieldApp = new JTextField();
-					jPanelContaint.add(jTextFieldApp);
-					jTextFieldApp.setText("1.3");
-					jTextFieldApp.setPreferredSize(new java.awt.Dimension(120, 21));
-				}
-				{
-					jLabelSDK = new JLabel();
-					jPanelContaint.add(jLabelSDK);
-					jLabelSDK.setText("SDK: ");
-				}
-				{
-					jTextFieldSDK = new JTextField();
-					jPanelContaint.add(jTextFieldSDK);
-					jTextFieldSDK.setText("5.1.0");
-					jTextFieldSDK.setPreferredSize(new java.awt.Dimension(120, 21));
-				}
-				{
-					jLabelDigest = new JLabel();
-					jPanelContaint.add(jLabelDigest);
-					jLabelDigest.setText("Digest: ");
-				}
-				{
-					jTextFieldDigest = new JTextField();
-					jPanelContaint.add(jTextFieldDigest);
-					jTextFieldDigest.setText("7fc15376099483231440dfef76540a9678a99fa5dc977c35b55b9e46ee7444c4");
-					jTextFieldDigest.setPreferredSize(new java.awt.Dimension(262, 21));
+					jLabelBasicInfo = new JLabel();
+					jPanelContaint.add(jLabelBasicInfo);
+					jLabelBasicInfo.setText("--------------------Basic Infomation--------------------");
 				}
 				{
 					jLabelAID1 = new JLabel();
@@ -193,6 +157,50 @@ public class NewConfigDialog extends javax.swing.JDialog {
 					jTextFieldUID.setText("YOUR UID");
 					jTextFieldUID.setPreferredSize(new java.awt.Dimension(280, 21));
 				}
+				{
+					jLabelAdvanceInfo = new JLabel();
+					jPanelContaint.add(jLabelAdvanceInfo);
+					jLabelAdvanceInfo.setText("-------------------Advance Infomation-------------------");
+				}
+				{
+					jLabelST1 = new JLabel();
+					jPanelContaint.add(jLabelST1);
+					jLabelST1.setText("Keep stamia points in the range: ");
+				}
+				{
+					jTextFieldSTDown = new JTextField();
+					jPanelContaint.add(jTextFieldSTDown);
+					jTextFieldSTDown.setText("20");
+					jTextFieldSTDown.setPreferredSize(new java.awt.Dimension(30, 21));
+				}
+				{
+					jLabelST2 = new JLabel();
+					jPanelContaint.add(jLabelST2);
+					jLabelST2.setText("to Max ST-");
+				}
+				{
+					jTextFieldSTUp = new JTextField();
+					jPanelContaint.add(jTextFieldSTUp);
+					jTextFieldSTUp.setText("30");
+					jTextFieldSTUp.setPreferredSize(new java.awt.Dimension(30, 21));
+				}
+				{
+					jLabelMaxLine = new JLabel();
+					jPanelContaint.add(jLabelMaxLine);
+					jLabelMaxLine.setText("MaxLine of histroy: ");
+				}
+				{
+					jTextFieldMaxLine = new JTextField();
+					jPanelContaint.add(getJTextFieldMaxLine());
+					jTextFieldMaxLine.setText("1000");
+					jTextFieldMaxLine.setPreferredSize(new java.awt.Dimension(70, 21));
+				}
+				{
+					jCheckBoxShowRank = new JCheckBox();
+					jPanelContaint.add(getJCheckBoxShowRank());
+					jCheckBoxShowRank.setText("ShowRank");
+					jCheckBoxShowRank.setSelected(true);
+				}
 			}
 			{
 				jPanelButtons = new JPanel();
@@ -213,13 +221,29 @@ public class NewConfigDialog extends javax.swing.JDialog {
 					jButtonCancel.addActionListener(ncl);
 				}
 			}
-			this.setSize(360, 234);
+			this.setSize(360, 260);
 			Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize(); 
 			setBounds((screenSize.width - this.getWidth()) / 2, (screenSize.height - this.getHeight()) / 2, this.getWidth(), this.getHeight());
 			this.setResizable(false);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public JCheckBox getJCheckBoxShowRank() {
+		return jCheckBoxShowRank;
+	}
+	
+	public JTextField getJTextFieldMaxLine() {
+		return jTextFieldMaxLine;
+	}
+	
+	public JTextField getJTextFieldSTDown() {
+		return jTextFieldSTDown;
+	}
+	
+	public JTextField getJTextFieldSTUp() {
+		return jTextFieldSTUp;
 	}
 
 }

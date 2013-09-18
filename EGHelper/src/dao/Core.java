@@ -58,7 +58,6 @@ public class Core extends CoreData implements CoreThreadInterface {
 		req.setHeader("Accept-Language", "zh-cn");
 		req.setHeader("Accept-Encoding", "gzip, deflate");
 		req.setHeader("App-Id-2", this.app.id2);
-		req.setHeader("App-Version", this.app.version);
 		req.setHeader("App-Id-3", this.app.id3);
 		req.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
 		req.setHeader("referrer", referrer);
@@ -83,7 +82,8 @@ public class Core extends CoreData implements CoreThreadInterface {
 		HttpHost target = new HttpHost(host, 80, "http");
 		HttpGet req = new HttpGet(addr);
 		setHeaders(req);
-		carrier.println("Now loading:"+addr);
+		if (this.carrier.isDebugMode())
+			carrier.println("Now loading:"+addr);
 		
 		HttpEntity entity = null;
 		try{
@@ -128,7 +128,8 @@ public class Core extends CoreData implements CoreThreadInterface {
 		HttpPost req = new HttpPost(addr);
 		setHeaders2(req);
 		req.setEntity(en);
-		carrier.println("Now loading:"+addr);
+		if (this.carrier.isDebugMode())
+			carrier.println("Now loading:"+addr);
 
 		HttpEntity entity = null;
 		try{
@@ -213,7 +214,9 @@ public class Core extends CoreData implements CoreThreadInterface {
 			return false;
 		}
 		
-		refreshRankInfo();
+		carrier.println("开始解析排名信息。。。");
+		this.refreshRankInfo();
+		carrier.println("。。。完毕");
 		
 		loadPage(missionUrl,filemissionSet);
 		String s = StringScanner.findString("こちら", this.filemissionSet);
@@ -301,6 +304,7 @@ public class Core extends CoreData implements CoreThreadInterface {
 			}
 
 			String s = rankAnalyzer.analyze(rankLevel[1][i]);
+			s = s.replace("pt", "");
 			ranktemp.put(rankLevel[1][i], Integer.parseInt(s));
 		}
 		
@@ -498,22 +502,27 @@ public class Core extends CoreData implements CoreThreadInterface {
 			if (!loadPage(url,fileQuestPage))
 				return false;
 		String s;
-		s = StringScanner.findString("<span id=\"st\">",fileQuestPage);
-		s = s.replace("</span>", "");
-		s = s.replace("<span id=\"st\">", "");
-		st = Integer.parseInt(s);
-		s = StringScanner.findString("<span id=\"max_st\">",fileQuestPage);
-		s = s.replace("</span>", "");
-		s = s.replace("<span id=\"max_st\">", "");
-		max_st = Integer.parseInt(s);
-		s = StringScanner.findString("<span id=\"bp\">",fileQuestPage);
-		s = s.replace("</span>", "");
-		s = s.replace("<span id=\"bp\">", "");
-		bp = Integer.parseInt(s);
-		s = StringScanner.findString("<span id=\"max_bp\">",fileQuestPage);
-		s = s.replace("</span>", "");
-		s = s.replace("<span id=\"max_bp\">", "");
-		max_bp = Integer.parseInt(s);
+		try {
+			s = StringScanner.findString("<span id=\"st\">",fileQuestPage);
+			s = s.replace("</span>", "");
+			s = s.replace("<span id=\"st\">", "");
+			st = Integer.parseInt(s);
+			s = StringScanner.findString("<span id=\"max_st\">",fileQuestPage);
+			s = s.replace("</span>", "");
+			s = s.replace("<span id=\"max_st\">", "");
+			max_st = Integer.parseInt(s);
+			s = StringScanner.findString("<span id=\"bp\">",fileQuestPage);
+			s = s.replace("</span>", "");
+			s = s.replace("<span id=\"bp\">", "");
+			bp = Integer.parseInt(s);
+			s = StringScanner.findString("<span id=\"max_bp\">",fileQuestPage);
+			s = s.replace("</span>", "");
+			s = s.replace("<span id=\"max_bp\">", "");
+			max_bp = Integer.parseInt(s);
+		} catch (NumberFormatException e) {
+			return false;
+		}
+		
 		
 		if (st>max_exp-exp)
 			this.isUpgrade = true;
@@ -552,6 +561,7 @@ public class Core extends CoreData implements CoreThreadInterface {
 			if (s==null){
 				t1="--";
 				t2="--";
+				br.close();
 				return true;
 			}
 			t1 = StringScanner.sortString(s,"全回復まで",'<');
@@ -562,6 +572,7 @@ public class Core extends CoreData implements CoreThreadInterface {
 			}
 			if (s==null){
 				t2="--";
+				br.close();
 				return true;
 			}
 			t2 = StringScanner.sortString(s,"全回復まで",'<');
@@ -686,60 +697,75 @@ public class Core extends CoreData implements CoreThreadInterface {
 		//主处理循环
 		while(exitflag){
 			//刷新状态信息
+			carrier.println("开始解析状态信息。。。");
 			if (!analyzeStatus(true,carrier.pages.QUEST))
 				continue;
+			carrier.println("。。。完毕");
 			
 			if (carrier.isRankOnlyMode())
 			//仅解析排名信息模式
 			{	
+				carrier.println("开始解析排名信息。。。");
 				this.refreshRankInfo();
+				carrier.println("。。。完毕");
 			} else
 			//正常业务处理模式
 			{
-				//尝试解析PVP活动信息
-				if (isBattleActivity){
-					loadPage(carrier.pages.EVENT_BATTLE,this.fileBattleList);
-					isBattleActivity = this.checkActivity(this.fileBattleList);
+				if (!this.carrier.isBetaMode()){
+					//尝试解析PVP活动信息
 					if (isBattleActivity){
-						if (bp>=this.bp_combo)
-							comboFightMode = true;
-						if (bp==0)
-							comboFightMode = false;
-						
-						String s;
-						s = StringScanner.findString("3倍", this.fileBattleList);
-						if (s!=null)
-							carrier.println("踩中三倍！剩余："+StringScanner.sortString(s, "\">", '<')+"秒。");
-						s = StringScanner.findString("バトルガチャチケット", this.fileBattleList);
-						if (s!=null){
-							carrier.println("连胜中，剩余："+StringScanner.sortString(s, "class=\"colorR\">", '<'));
-							comboFightMode = true;
+						carrier.println("尝试解析PVP活动信息。。。");
+						loadPage(carrier.pages.EVENT_BATTLE,this.fileBattleList);
+						isBattleActivity = this.checkActivity(this.fileBattleList);
+						if (isBattleActivity){
+							if (bp>=this.bp_combo)
+								comboFightMode = true;
+							if (bp==0)
+								comboFightMode = false;
+							
+							String s;
+							s = StringScanner.findString("3倍", this.fileBattleList);
+							if (s!=null)
+								carrier.println("踩中三倍！剩余："+StringScanner.sortString(s, "\">", '<')+"秒。");
+							s = StringScanner.findString("バトルガチャチケット", this.fileBattleList);
+							if (s!=null){
+								carrier.println("连胜中，剩余："+StringScanner.sortString(s, "class=\"colorR\">", '<'));
+								comboFightMode = true;
+							}
+							if (comboFightMode)
+								playBattle(carrier.pages.EVENT_BATTLE,carrier.pages.EVENT_BATTLE+carrier.pages.SHOW_USER);
+							isMissionActivity = false;
+							carrier.println("。。。完毕");
+						} else {
+							carrier.println("PVP活动暂时不开放，已关闭自动参加PVP活动战斗功能。");
 						}
-						if (comboFightMode)
-							playBattle(carrier.pages.EVENT_BATTLE,carrier.pages.EVENT_BATTLE+carrier.pages.SHOW_USER);
-						isMissionActivity = false;
+					}
+					
+					//尝试解析PVE活动信息
+					if (isMissionActivity){
+						carrier.println("尝试解析PVE活动信息。。。");
+						isMissionActivity = this.playMission(carrier.pages.MISSION);
+						carrier.println("。。。完毕");
 					} else {
-						carrier.println("PVP活动暂时不开放，已关闭自动参加PVP活动战斗功能。");
+						carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
+					}
+					
+					//尝试解析校园PVP战斗
+					if (freebp>0||this.useBPMode){
+						carrier.println("开始尝试解析日常PVP信息");
+						if (!playBattle(
+							carrier.pages.BATTLE,
+							carrier.pages.BATTLE+carrier.pages.SHOW_USER
+						))
+							carrier.println("PVP校园战暂时不开放，稍后重试。");
+						carrier.println("完毕");
 					}
 				}
 				
-				//尝试解析PVE活动信息
-				if (isMissionActivity){
-					isMissionActivity = this.playMission(carrier.pages.MISSION);
-				} else {
-					carrier.println("PVE活动暂时不开放，已关闭自动参加PVE活动功能。");
-				}
-				
-				//尝试解析校园PVP战斗
-				if (freebp>0||this.useBPMode)
-					if (!playBattle(
-						carrier.pages.BATTLE,
-						carrier.pages.BATTLE+carrier.pages.SHOW_USER
-					))
-						carrier.println("PVP校园战暂时不开放，稍后重试。");;
-				
 				//尝试自动探索
+				carrier.println("开始尝试自动探索。。。");
 				exitflag &= this.playQuest(carrier.pages.QUEST);
+				carrier.println("。。。完毕");
 			}
 			
 			//如果信息更新则刷新状态信息
