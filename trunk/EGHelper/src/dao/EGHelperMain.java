@@ -77,9 +77,11 @@ public class EGHelperMain {
 				InputStream instreams = entity.getContent();
 				Scanner sc = new Scanner(instreams);
 				TreeMap<String, String> map = new TreeMap<String, String>();
+				String p,p2,t;
 				while(sc.hasNext()){
-					sc.next();
-					String p,p2,t;
+					t = sc.next();
+					if (!t.contains("Noahzark"))
+						return false;
 					while(sc.hasNext()){
 						p = sc.next();
 						t = sc.next();
@@ -96,21 +98,20 @@ public class EGHelperMain {
 				}
 			}
 		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 		return false;
 	}
 
 	public static void main(String[] args) {
-		System.out.println("Arguments:");
 		if (EGHelperMain.checkVersion()){
 			return;
 		}
-			
+		
+		if (args.length>0)
+			System.out.println("Arguments:");
 		for (String s : args){
 			System.out.println(s);
 		}
