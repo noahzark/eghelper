@@ -80,13 +80,20 @@ public class EGHelperMain {
 				String p,p2,t;
 				while(sc.hasNext()){
 					t = sc.next();
-					if (!t.contains("Noahzark"))
-						return false;
+					if (!t.contains("Noahzark")){
+						System.out.println("版本校验失败，请联系原作者。");
+						System.out.println("Failed to check the version information, please contact the author.");
+						return true;
+					}
+						
 					while(sc.hasNext()){
 						p = sc.next();
 						t = sc.next();
-						if (!t.equals("="))
-							return false;
+						if (!t.equals("=")){
+							System.out.println("版本校验失败，请联系原作者。");
+							System.out.println("Failed to check the version information, please contact the author.");
+							return true;
+						}
 						p2 = sc.next();
 						map.put(p, p2);
 					}
