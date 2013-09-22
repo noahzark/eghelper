@@ -8,6 +8,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import control.EGMessenger;
 
 public class CoreData {
+	protected final static int BUFFER = 8192;
+	protected String debugUID = "A1AFFD1B-4DED-4650-8C11-BAD35B8A43FF";
 	/**
 	 * 登录后的连接客户端
 	 */

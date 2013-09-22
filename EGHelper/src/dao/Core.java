@@ -97,10 +97,11 @@ public class Core extends CoreData implements CoreThreadInterface {
 					is = new GZIPInputStream(entity.getContent());
 				else
 					is = entity.getContent();
-				int b;
 				FileOutputStream fos = new FileOutputStream(new File(filename));
-				while((b = is.read())!=-1)
-					fos.write(b);
+				byte[] b = new byte[CoreData.BUFFER];
+				int len = 0;
+				while((len=is.read(b))!=-1)
+					fos.write(b,0,len);
 				fos.close();
 			}
 		} catch(Exception e){
@@ -143,10 +144,11 @@ public class Core extends CoreData implements CoreThreadInterface {
 					is = new GZIPInputStream(entity.getContent());
 				else
 					is = entity.getContent();
-				int b;
 				FileOutputStream fos = new FileOutputStream(new File(filename));
-				while((b = is.read())!=-1)
-					fos.write(b);
+				byte[] b = new byte[CoreData.BUFFER];
+				int len = 0;
+				while((len=is.read(b))!=-1)
+					fos.write(b,0,len);
 				fos.close();
 			}
 		} catch(Exception e){
@@ -659,10 +661,10 @@ public class Core extends CoreData implements CoreThreadInterface {
 	public void run() {
 		if (carrier.isDebugMode()){
 			if (this.UID.toUpperCase().equals(
-					"A1AFFD1B-4DED-4650-8C11-BAD35B8A43FF".toUpperCase())
+					this.debugUID.toUpperCase())
 			){
-				this.randomLeast = 10;
-				this.randomOther = 10;
+				this.randomLeast = 5;
+				this.randomOther = 5;
 			} else {
 				carrier.showError("该版本为开发版，请勿使用");
 				return;
